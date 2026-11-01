@@ -1,0 +1,19 @@
+{
+  "name": "goldvein",
+  "version": "1.0.0",
+  "description": "Goldvein: strike gold in your browser. Browser proof-of-work pool paid in SOL by share of verified work.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.3",
+    "bs58": "^6.0.0",
+    "pumpkit": "github:ciberneticatradingdev/pumpkit"
+  }
+}

@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Goldvein</title>
+  <meta name="description" content="Goldvein: strike gold in your browser. Every verified SHA-256 proof is a share of the round pot, paid in SOL.">
+  <meta name="goldvein-api" content="">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Pixelify+Sans:wght@500;600;700&family=Silkscreen&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <canvas id="pit" class="pit" aria-label="A pixel-art gold vein: the prospector swings with your hashrate and every proof cracks out a nugget. Click to swing."></canvas>
+
+  <aside class="rail">
+    <a class="logo" href="/" data-nav aria-label="Goldvein"><img src="/logo-small.svg" alt=""></a>
+    <nav>
+      <a href="/" data-nav><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg><span>Mine</span></a>
+      <a href="/stats" data-nav><svg viewBox="0 0 24 24"><path d="M4 19h16M5 15l4-5 4 3 6-7"/></svg><span>Stats</span></a>
+      <a href="/leaderboard" data-nav><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg><span>Leaderboard</span></a>
+      <a href="/rounds" data-nav><svg viewBox="0 0 24 24"><path d="M12 4 3 8.5l9 4.5 9-4.5zM3 12.5l9 4.5 9-4.5M3 16.5 12 21l9-4.5"/></svg><span>Rounds</span></a>
+      <a href="/ledger" data-nav><svg viewBox="0 0 24 24"><path d="M6 4h12v16l-3-2-3 2-3-2-3 2zM9 9h6M9 13h6"/></svg><span>Ledger</span></a>
+      <a href="/benchmark" data-nav><svg viewBox="0 0 24 24"><path d="M4.5 16a8 8 0 1 1 15 0M12 16l4-5"/><circle cx="12" cy="16" r="1.2"/></svg><span>Benchmark</span></a>
+      <a href="/bitcoin" data-nav><svg viewBox="0 0 24 24"><path d="M9 4v16M13 4v16M7 7h7a2.5 2.5 0 0 1 0 5H7M7 12h8a2.5 2.5 0 0 1 0 5H7"/></svg><span>Bitcoin</span></a>
+      <a href="/rules" data-nav><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/></svg><span>How it works</span></a>
+    </nav>
+    <a class="social" href="https://x.com/Goldvein_Sol" target="_blank" rel="noopener" aria-label="Goldvein on X">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      <span>@Goldvein_Sol</span>
+    </a>
+    <span class="conn" id="conn" title="connecting"><i></i></span>
+  </aside>
+
+
+  <!-- ================= Mine ================= -->
+  <main class="view mine" data-view="/">
+    <header class="hero">
+      <p class="eyebrow"><span class="brandword">GOLDVEIN</span><span id="roundLabel">round #–</span></p>
+      <h1>Strike gold.<br>Get <em>paid.</em></h1>
+      <p class="lede">Your device chips at SHA-256 puzzles in this tab. When a round closes, the pot is split by verified work.</p>
+      <ol class="chips" id="howto">
+        <li><b>1</b>Paste a Solana address</li>
+        <li><b>2</b>Tune your rig</li>
+        <li><b>3</b>Press start</li>
+      </ol>
+      <div class="ca" id="ca">
+        <span class="ca-k">CA</span>
+        <code id="caValue">dropping at launch</code>
+        <button class="ca-btn" id="caCopy" hidden>Copy</button>
+        <a class="ca-btn" id="caLink" target="_blank" rel="noopener" hidden>pump.fun ↗</a>
+      </div>
+    </header>
+
+    <section class="card net">
+      <div class="card-head"><span class="label">Network</span><span class="tag" id="netState">live</span></div>
+      <div class="grid2">
+        <div class="stat"><span class="label">Pool rate</span><b id="poolRate">0</b><em id="poolRateUnit">H/s</em></div>
+        <div class="stat"><span class="label">Miners</span><b id="miners">0</b><em>last minute</em></div>
+        <div class="stat"><span class="label">Proofs</span><b id="ppm">0</b><em>per minute</em></div>
+        <div class="stat"><span class="label">Pot</span><b id="reward">0</b><em>SOL this round</em></div>
+      </div>
+      <div class="round">
+        <div class="row-between"><span class="label">Round closes in</span><span class="mono strong" id="roundLeft">–</span></div>
+        <div class="seg" id="roundRuler"></div>
+        <span class="muted small" id="roundMiners">0 miners</span>
+      </div>
+    </section>
+
+    <section class="card rig">
+      <div class="card-head"><span class="label">Your rig</span><span class="state" id="status"><i></i><b>idle</b></span></div>
+      <div class="rig-main">
+        <div class="stat big"><span class="label">Hashrate</span><b id="rate">0</b><em id="rateUnit">H/s</em></div>
+        <canvas id="spark" height="56"></canvas>
+      </div>
+      <div class="grid2 tight">
+        <div class="stat"><span class="label">Difficulty</span><b id="diff">–</b><em>bits</em></div>
+        <div class="stat"><span class="label">Proofs</span><b id="proofs">0</b><em id="rej">0 rejected</em></div>
+      </div>
+      <div class="digest"><span class="label">Last hash</span><code id="digest">waiting for a proof</code></div>
+      <ol class="ticker" id="log"></ol>
+    </section>
+
+    <section class="card earn">
+      <div class="card-head"><span class="label">Earnings</span><span class="muted mono small" id="youAddr">no address</span></div>
+      <div class="grid3">
+        <div class="stat"><span class="label">This round</span><b id="share">0%</b><em id="est">≈ 0 SOL</em></div>
+        <div class="stat"><span class="label">Unpaid</span><b id="balance">0</b><em id="pendingNote">SOL</em></div>
+        <div class="stat"><span class="label">Paid</span><b id="paid">0</b><em>SOL total</em></div>
+      </div>
+      <div class="seg" id="thresholdRuler"></div>
+      <p class="muted small" id="thresholdText">0% of the 0.01 SOL payout threshold</p>
+      <div class="card-head sub"><span class="label">Recent rounds</span><span class="muted small">pot, SOL</span></div>
+      <ol class="rounds" id="rounds"></ol>
+    </section>
+
+    <div class="control">
+      <div class="settings" id="settings" hidden>
+        <div class="card-head"><span class="label">Rig settings</span><span class="muted small mono" id="cores"></span></div>
+        <label class="ctl"><span>CPU threads</span><input type="range" id="threads" min="1" step="1"><b id="threadsVal"></b></label>
+        <label class="ctl"><span>CPU load</span><input type="range" id="cpuDuty" min="10" max="100" step="5"><b id="cpuDutyVal"></b></label>
+        <label class="ctl switch"><span>GPU (WebGPU)</span><input type="checkbox" id="gpu"><i></i><b id="gpuState">off</b></label>
+        <label class="ctl"><span>GPU load</span><input type="range" id="gpuDuty" min="10" max="100" step="5"><b id="gpuDutyVal"></b></label>
+        <p class="muted small" id="gpuInfo"></p>
+      </div>
+      <div class="bar">
+        <input id="wallet" placeholder="Paste a Solana address" autocomplete="off" spellcheck="false" aria-label="Solana wallet address">
+        <button class="icon-btn" id="settingsBtn" aria-label="Rig settings" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
+        <button id="go" class="go">Start mining</button>
+      </div>
+      <p class="consent">Address only, nothing to sign. Uses your CPU and GPU only while running. Paid automatically at <span class="threshold">0.01</span> SOL.</p>
+    </div>
+    <span class="hint">click the vein to swing</span>
+    <p class="fig" aria-hidden="true"><b>Vein 07</b><i></i>Depth 340 m<i></i><span>Ore: SHA-256</span></p>
+  </main>
+
+  <!-- ================= Other pages ================= -->
+  <main class="view page" data-view="page" hidden>
+    <div class="sheet">
+      <article data-page="/leaderboard" hidden>
+        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>leaderboard</p>
+        <h1>Leaderboard</h1>
+        <p class="lede">Who is mining, and how each round's pot is shared.</p>
+        <div class="tabs" id="boardTabs">
+          <button data-board="round" class="on">This round</button>
+          <button data-board="last">Last round</button>
+          <button data-board="all">All time</button>
+        </div>
+        <div class="grid4">
+          <div class="stat"><span class="label">Pool rate</span><b id="lbRate">0</b><em id="lbRateUnit">H/s</em></div>
+          <div class="stat"><span class="label">Miners</span><b id="lbMiners">0</b><em>last minute</em></div>
+          <div class="stat"><span class="label">Proofs</span><b id="lbProofs">0</b><em>per minute</em></div>
+          <div class="stat"><span class="label">Round</span><b id="lbRound">–</b><em id="lbLeft">–</em></div>
+        </div>
+        <div class="table-wrap"><table class="table" id="board"></table></div>
+        <p class="muted small">Share is your verified work in the period divided by all verified work. A proof at difficulty <i>d</i> counts as 2<sup>d</sup> hashes.</p>
+      </article>
+
+      <article data-page="/stats" hidden>
+        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>stats</p>
+        <h1>Stats</h1>
+        <p class="lede">How the pool is doing: hashrate, miners, pots and payouts over time.</p>
+        <div class="grid4">
+          <div class="stat"><span class="label">Paid out</span><b id="stPaid">0</b><em>SOL, all time</em></div>
+          <div class="stat"><span class="label">Rounds</span><b id="stRounds">0</b><em>settled</em></div>
+          <div class="stat"><span class="label">Miners</span><b id="stWallets">0</b><em>addresses, all time</em></div>
+          <div class="stat"><span class="label">Work</span><b id="stWork">0</b><em>hashes verified</em></div>
+        </div>
+        <div class="charts">
+          <figure class="chart-card"><figcaption><span class="label">Pool hashrate</span><span class="muted small">last 24 h</span></figcaption><div class="chart"><canvas id="chHash"></canvas></div></figure>
+          <figure class="chart-card"><figcaption><span class="label">Active miners</span><span class="muted small">last 24 h</span></figcaption><div class="chart"><canvas id="chMiners"></canvas></div></figure>
+          <figure class="chart-card"><figcaption><span class="label">Pot per round</span><span class="muted small">last 60 rounds, SOL</span></figcaption><div class="chart"><canvas id="chPot"></canvas></div></figure>
+          <figure class="chart-card"><figcaption><span class="label">Paid per day</span><span class="muted small">last 30 days, SOL</span></figcaption><div class="chart"><canvas id="chDays"></canvas></div></figure>
+        </div>
+        <details class="table-toggle"><summary>Daily totals as a table</summary>
+          <div class="table-wrap"><table class="table" id="daysTable"></table></div>
+        </details>
+      </article>
+
+      <article data-page="/rounds" hidden>
+        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>rounds</p>
+        <div id="roundsList">
+          <h1>Rounds</h1>
+          <p class="lede">Every settled round. Open one to see exactly how its pot was split and paid.</p>
+          <label class="ctl switch inline"><input type="checkbox" id="roundsAll"><i></i><span>Show rounds nobody mined</span></label>
+          <div class="table-wrap"><table class="table clickable" id="roundsTable"></table></div>
+          <button class="ghost" id="roundsMore" hidden>Load older rounds</button>
+        </div>
+        <div id="roundDetail" hidden>
+          <div class="row-between round-nav">
+            <a href="/rounds" data-nav class="back">← All rounds</a>
+            <span><a id="rdPrev" data-nav class="pill">← Older</a> <a id="rdNext" data-nav class="pill">Newer →</a></span>
+          </div>
+          <h1 id="rdTitle">Round</h1>
+          <p class="lede" id="rdWhen"></p>
+          <div class="grid4">
+            <div class="stat"><span class="label">Pot</span><b id="rdPot">0</b><em>SOL split</em></div>
+            <div class="stat"><span class="label">Miners</span><b id="rdMiners">0</b><em>with credited work</em></div>
+            <div class="stat"><span class="label">Work</span><b id="rdWork">0</b><em>hashes</em></div>
+            <div class="stat"><span class="label">Payouts</span><b id="rdPayouts">0</b><em>sent at close</em></div>
+          </div>
+          <h2 class="section">How the pot was split</h2>
+          <div class="table-wrap"><table class="table" id="rdShares"></table></div>
+          <h2 class="section">Payouts from this round</h2>
+          <div class="table-wrap"><table class="table" id="rdPayoutTable"></table></div>
+        </div>
+      </article>
+
+      <article data-page="/benchmark" hidden>
+        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>benchmark</p>
+        <h1>Benchmark</h1>
+        <p class="lede">Measure this device: 5 seconds on every CPU thread, then 5 seconds on the GPU. Nothing is mined or sent while it runs.</p>
+        <div class="bench">
+          <div class="bench-run">
+            <div class="row-between"><span class="label" id="bnPhase">Ready</span><span class="muted small mono" id="bnDevice"></span></div>
+            <div class="bench-rate"><b id="bnRate">0</b><em id="bnUnit">H/s</em></div>
+            <div class="seg" id="bnProgress"></div>
+            <button class="go" id="bnGo">Run benchmark</button>
+            <p class="muted small" id="bnNote"></p>
+          </div>
+          <div class="bench-result" id="bnResult" hidden>
+            <div class="grid3">
+              <div class="stat"><span class="label">CPU</span><b id="bnCpu">–</b><em id="bnCpuSub"></em></div>
+              <div class="stat"><span class="label">GPU</span><b id="bnGpu">–</b><em id="bnGpuSub"></em></div>
+              <div class="stat"><span class="label">Your earnings</span><b id="bnEarn">–</b><em id="bnEarnSub">SOL for you</em></div>
+            </div>
+            <div class="calc">
+              <span class="label">Earnings calculator</span>
+              <div class="calc-inputs">
+                <label><span>Pot</span><input type="number" id="cPot" value="10" min="0" step="any"><em>SOL</em></label>
+                <label><span>Other miners</span><input type="number" id="cMiners" value="10" min="0" step="1"></label>
+                <label><span>Their speed</span><input type="number" id="cRate" value="1" min="0" step="any"><em>GH/s each</em></label>
+              </div>
+              <ol class="calc-steps" id="cSteps"></ol>
+            </div>
+            <button class="ghost" id="bnSave">Add to the device table</button>
+          </div>
+        </div>
+        <h2 class="section">Devices tested</h2>
+        <div class="table-wrap"><table class="table" id="benchTable"></table></div>
+        <p class="muted small">Self-reported by the browser that ran the test. Shown for comparison only; it never affects credit.</p>
+      </article>
+
+      <article data-page="/ledger" hidden>
+        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>ledger</p>
+        <h1>Ledger</h1>
+        <p class="lede">Every payout, with its transaction. Balances are paid at round close once they cross the threshold.</p>
+        <div class="kv" id="treasury"></div>
+        <div class="table-wrap"><table class="table" id="ledger"></table></div>
+      </article>
+
+      <article data-page="/bitcoin" hidden>
+        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>bitcoin</p>
+        <h1>Fees mine Bitcoin.</h1>
+        <p class="lede">The coin's creator rewards buy real SHA-256 hashpower. Every hop leaves a receipt you can open: Solana transactions, a NiceHash order, a pool address and the Bitcoin that lands on it.</p>
+        <div class="grid4">
+          <div class="stat"><span class="label">Hashpower bought</span><b id="btSpeed">0</b><em id="btSpeedSub">accepted now</em></div>
+          <div class="stat"><span class="label">At the pool</span><b id="btPool">0</b><em id="btPoolSub">5 min average</em></div>
+          <div class="stat"><span class="label">Bitcoin received</span><b id="btRecv">0</b><em id="btRecvSub">BTC on the payout address</em></div>
+          <div class="stat"><span class="label">Rewards converted</span><b id="btUsdt">0</b><em id="btUsdtSub">USDT into hashpower</em></div>
+        </div>
+        <div class="flow">
+          <div><span>01</span><b>Claim</b><p>The engine wallet claims the coin's creator rewards from pump.fun. <code>SOL</code>, on chain.</p></div>
+          <div><span>02</span><b>Swap</b><p>Everything above a gas reserve is swapped to <code>USDT</code> on Jupiter. One transaction, public.</p></div>
+          <div><span>03</span><b>Deposit</b><p>The USDT is sent on Solana to NiceHash's deposit address. The transfer is the receipt.</p></div>
+          <div><span>04</span><b>Hashpower</b><p>NiceHash balance becomes a <code>SHA256ASICBOOST</code> order: real ASICs point at our pool for as long as the USDT lasts. Order id and accepted speed below.</p></div>
+          <div><span>05</span><b>Mine</b><p>The pool pays the public address straight from the block's coinbase when it finds one. Hashrate and payouts are read from the pool and from <code>mempool.space</code>.</p></div>
+          <div><span>06</span><b>Repeat</b><p id="btEvery">Every 10 minutes. First order needs 300 USDT; after that every claim tops the order up.</p></div>
+        </div>
+        <div class="kv" id="btLinks"></div>
+        <h2 class="section">Hashpower order</h2>
+        <div class="table-wrap"><table class="table" id="btOrder"></table></div>
+        <h2 class="section">Bitcoin payouts</h2>
+        <div class="table-wrap"><table class="table" id="btPayouts"></table></div>
+        <h2 class="section">Receipts</h2>
+        <div class="table-wrap"><table class="table" id="btLedger"></table></div>
+        <p class="muted small" id="btNote"></p>
+      </article>
+
+      <article data-page="/rules" hidden>
+        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>how it works</p>
+        <h1>How it works</h1>
+        <p class="lede">From a random seed to SOL in your wallet.</p>
+        <div class="flow">
+          <div><span>01</span><b>Ticket</b><p>Your tab asks the server for a challenge bound to your address: a random 32-byte <code>seed</code> and a <code>difficulty</code> in bits. Tickets last two minutes.</p></div>
+          <div><span>02</span><b>Search</b><p>Web Workers on your CPU and a WebGPU compute shader on your GPU hash <code>SHA-256(seed ‖ nonce)</code>, looking for a digest that starts with <code>difficulty</code> zero bits.</p></div>
+          <div><span>03</span><b>Proof</b><p>A hit is sent as its nonce. The server checks it with a single hash. Weak, reused, expired or borrowed proofs are rejected.</p></div>
+          <div><span>04</span><b>Credit</b><p>A proof at difficulty <i>d</i> is credited 2<sup>d</sup> hashes, the number of tries it takes on average.</p></div>
+          <div><span>05</span><b>Difficulty</b><p>Each address gets its own difficulty, tuned for about one proof every few seconds, so a phone and a GPU rig are measured the same way.</p></div>
+          <div><span>06</span><b>Round</b><p id="fundingRule">At round close the pot is split by share of verified work. Balances over the threshold are paid out and logged in the ledger.</p></div>
+        </div>
+        <p class="muted small" id="rulesConfig"></p>
+      </article>
+    </div>
+  </main>
+</body>
+</html>
