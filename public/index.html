@@ -235,23 +235,23 @@
       <article data-page="/bitcoin" hidden>
         <p class="eyebrow"><span class="brandword">GOLDVEIN</span>bitcoin</p>
         <h1>Fees mine Bitcoin.</h1>
-        <p class="lede">The coin's creator rewards buy real SHA-256 hashpower. Every hop leaves a receipt you can open: Solana transactions, a NiceHash order, a pool address and the Bitcoin that lands on it.</p>
+        <p class="lede">The coin's creator rewards buy real SHA-256 hashpower. No exchange account, no identity check: Solana transactions, a Chainflip swap into native BTC, a rig rental and the Bitcoin that lands on a public address.</p>
         <div class="grid4">
-          <div class="stat"><span class="label">Hashpower bought</span><b id="btSpeed">0</b><em id="btSpeedSub">accepted now</em></div>
+          <div class="stat"><span class="label">Hashpower rented</span><b id="btSpeed">0</b><em id="btSpeedSub">live rentals</em></div>
           <div class="stat"><span class="label">At the pool</span><b id="btPool">0</b><em id="btPoolSub">5 min average</em></div>
           <div class="stat"><span class="label">Bitcoin received</span><b id="btRecv">0</b><em id="btRecvSub">BTC on the payout address</em></div>
-          <div class="stat"><span class="label">Rewards converted</span><b id="btUsdt">0</b><em id="btUsdtSub">USDT into hashpower</em></div>
+          <div class="stat"><span class="label">Rewards converted</span><b id="btUsdt">0</b><em id="btUsdtSub">BTC into hashpower</em></div>
         </div>
         <div class="flow">
           <div><span>01</span><b>Claim</b><p>The engine wallet claims the coin's creator rewards from pump.fun. <code>SOL</code>, on chain.</p></div>
-          <div><span>02</span><b>Swap</b><p>Everything above a gas reserve is swapped to <code>USDT</code> on Jupiter. One transaction, public.</p></div>
-          <div><span>03</span><b>Deposit</b><p>The USDT is sent on Solana to NiceHash's deposit address. The transfer is the receipt.</p></div>
-          <div><span>04</span><b>Hashpower</b><p>NiceHash balance becomes a <code>SHA256ASICBOOST</code> order: real ASICs point at our pool for as long as the USDT lasts. Order id and accepted speed below.</p></div>
+          <div><span>02</span><b>Swap</b><p>Everything above a gas reserve goes through a <code>Chainflip</code> deposit channel: native SOL in, native BTC out. No account, the channel id is the receipt.</p></div>
+          <div><span>03</span><b>Land</b><p>The BTC is delivered straight to the rig marketplace's deposit address. Both transactions are public on Solana and on Bitcoin.</p></div>
+          <div><span>04</span><b>Rent</b><p>The balance rents the cheapest reliable <code>sha256</code> rig on MiningRigRentals, pointed at our pool, for as many hours as it covers. Rental id and rig below.</p></div>
           <div><span>05</span><b>Mine</b><p>The pool pays the public address straight from the block's coinbase when it finds one. Hashrate and payouts are read from the pool and from <code>mempool.space</code>.</p></div>
-          <div><span>06</span><b>Repeat</b><p id="btEvery">Every 10 minutes. First order needs 300 USDT; after that every claim tops the order up.</p></div>
+          <div><span>06</span><b>Repeat</b><p id="btEvery">Every 10 minutes. Each claim becomes a new rental; nothing waits for a minimum order.</p></div>
         </div>
         <div class="kv" id="btLinks"></div>
-        <h2 class="section">Hashpower order</h2>
+        <h2 class="section">Rentals</h2>
         <div class="table-wrap"><table class="table" id="btOrder"></table></div>
         <h2 class="section">Bitcoin payouts</h2>
         <div class="table-wrap"><table class="table" id="btPayouts"></table></div>

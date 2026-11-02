@@ -294,35 +294,71 @@ async function loadBtc() {
   let d;
   try { d = await getJson('/api/btc'); } catch { return; }
   const { config: c, live: l, totals: t, ledger: L } = d;
-  const speed = l.order?.speed_eh ?? 0;
-  const [sv, su] = rate(speed * 1e18);
-  R('btSpeed', sv); setText('btSpeedSub', `${su} accepted · ${l.order?.rigs ?? 0} rigs`);
+  const mrr = c.provider === 'mrr';
+  const btc = v => `${btcFmt(v, 8)} BTC`;
+  const ext = (href, text) => `<a href="${esc(href)}" target="_blank" rel="noopener">${text}</a>`;
+  const row = (k, v) => `<div><span>${k}</span><b>${v}</b></div>`;
+  const acct = a => ext(`https://solscan.io/account/${a}`, esc(a));
+  const now = Date.now();
+  const liveRentals = (l.rentals ?? []).filter(r => r.end && r.end > now && !r.ended);
+  const parseNice = n => { const m = /([\d.]+)\s*([KMGTPE]?)/i.exec(n ?? ''); if (!m) return 0; return Number(m[1]) * ({ '': 1, K: 1e3, M: 1e6, G: 1e9, T: 1e12, P: 1e15, E: 1e18 }[m[2].toUpperCase()] ?? 1); };
+  if (mrr) {
+    const hs = liveRentals.reduce((a, r) => a + parseNice(r.hash_average ?? r.hash_advertised), 0);
+    const [sv, su] = rate(hs);
+    R('btSpeed', sv); setText('btSpeedSub', `${su} · ${liveRentals.length} live rental${liveRentals.length === 1 ? '' : 's'}`);
+  } else {
+    const speed = l.order?.speed_eh ?? 0; const [sv, su] = rate(speed * 1e18);
+    R('btSpeed', sv); setText('btSpeedSub', `${su} accepted · ${l.order?.rigs ?? 0} rigs`);
+  }
   const [pv, pu] = rate(l.pool?.hashrate_300s ?? 0);
   R('btPool', pv); setText('btPoolSub', `${pu} · 5 min average${l.pool?.unpaid_btc ? ` · ${btcFmt(l.pool.unpaid_btc)} BTC unpaid` : ''}`);
   R('btRecv', btcFmt((l.chain?.received_sats ?? 0) / 1e8));
   setText('btRecvSub', `BTC on the payout address · ${l.chain?.payouts?.length ?? 0} payouts`);
-  R('btUsdt', btcFmt(t.ordered_usdt, 2));
-  setText('btUsdtSub', `USDT into hashpower · ${sol(t.claimed_lamports)} SOL claimed`);
-  setText('btEvery', `Every ${Math.round(c.every_ms / 60000)} minutes. First order needs ${c.order_min_usdt} USDT; after that every claim tops the order up.`);
-  const row = (k, v) => `<div><span>${k}</span><b>${v}</b></div>`;
-  const acct = a => `<a href="https://solscan.io/account/${esc(a)}" target="_blank" rel="noopener">${esc(a)}</a>`;
+  if (mrr) { R('btUsdt', btcFmt(t.rented_btc, 8)); setText('btUsdtSub', `BTC into rentals · ${t.rented_hours} rig-hours · ${sol(t.claimed_lamports)} SOL claimed`); }
+  else { R('btUsdt', btcFmt(t.ordered_usdt, 2)); setText('btUsdtSub', `USDT into hashpower · ${sol(t.claimed_lamports)} SOL claimed`); }
+  setText('btEvery', mrr
+    ? `Every ${Math.round(c.every_ms / 60000)} minutes. Swaps start at ${c.min_swap_sol} SOL, rentals at ${c.min_rent_btc} BTC; nothing waits for a minimum order.`
+    : `Every ${Math.round(c.every_ms / 60000)} minutes. First order needs ${c.order_min_usdt} USDT; after that every claim tops the order up.`);
+  const m = l.market;
   $('btLinks').innerHTML =
     row('Engine wallet', c.wallet ? acct(c.wallet) : '<span class="muted">not armed yet</span>') +
-    row('NiceHash deposit (USDT on Solana)', c.nh_deposit ? acct(c.nh_deposit) : '<span class="muted">assigned at the first round</span>') +
-    row('Payout address', c.btc_address ? `<a href="https://mempool.space/address/${esc(c.btc_address)}" target="_blank" rel="noopener">${esc(c.btc_address)}</a>` : '<span class="muted">not set</span>') +
-    row('Pool', `${esc(c.pool_name)} · ${esc(c.pool)}${c.btc_address && /ocean/.test(c.pool) ? ` · <a href="https://ocean.xyz/stats/${esc(c.btc_address)}" target="_blank" rel="noopener">pool stats ↗</a>` : ''}`) +
-    row('Market', l.market?.price ? `${esc(c.algorithm)} · ${btcFmt(l.market.price, 2)} USDT per EH/day · ${l.market.orders} paying orders` : esc(c.algorithm)) +
-    (l.nhBalance ? row('NiceHash balance', `${usdt(l.nhBalance.available)} available · ${usdt(l.nhBalance.pending)} pending`) : '');
-  const o = l.order;
-  $('btOrder').innerHTML = '<tr><th>Order</th><th>Status</th><th class="num">Speed</th><th class="num">Limit</th><th class="num">Price</th><th class="num">Spent</th><th class="num">Left</th></tr>' +
-    (o ? `<tr><td class="mono">${esc(o.id)}</td><td><span class="st ${o.alive ? 'st-sent' : 'st-sim'}">${esc(o.status ?? '–')}</span></td><td class="num">${ehRate(o.speed_eh)}</td><td class="num">${ehRate(o.limit)}</td><td class="num">${btcFmt(o.price, 2)} USDT/EH/day</td><td class="num">${usdt(o.spent)}</td><td class="num">${usdt(o.available)}</td></tr>`
-      : `<tr><td colspan="7" class="empty">${c.writes ? `No live order yet. The first one is placed once ${c.order_min_usdt} USDT of rewards have reached NiceHash.` : 'The engine is not armed: no order to show.'}</td></tr>`);
+    (mrr
+      ? row('Rig marketplace deposit (BTC)', c.mrr_deposit ? ext(`https://mempool.space/address/${c.mrr_deposit}`, esc(c.mrr_deposit)) : '<span class="muted">read from the account at the first round</span>')
+      : row('NiceHash deposit (USDT on Solana)', c.nh_deposit ? acct(c.nh_deposit) : '<span class="muted">assigned at the first round</span>')) +
+    row('Payout address', c.btc_address ? ext(`https://mempool.space/address/${c.btc_address}`, esc(c.btc_address)) : '<span class="muted">not set</span>') +
+    row('Pool', `${esc(c.pool_name)} · ${esc(c.pool)}${c.btc_address && /ocean/.test(c.pool) ? ` · ${ext(`https://ocean.xyz/stats/${c.btc_address}`, 'pool stats ↗')}` : ''}`) +
+    (mrr
+      ? row('Market', m ? `${esc(c.algorithm)} on MiningRigRentals · lowest ${btcFmt(m.lowest, 6)} BTC per PH/day · ${m.available_rigs} rigs (${esc(m.available_hash)}) available` : esc(c.algorithm))
+      : row('Market', m?.price ? `${esc(c.algorithm)} · ${btcFmt(m.price, 2)} USDT per EH/day · ${m.orders} paying orders` : esc(c.algorithm))) +
+    (l.balance ? row(mrr ? 'Marketplace balance' : 'NiceHash balance', mrr ? `${btc(l.balance.confirmed)} confirmed${l.balance.unconfirmed ? ` · ${btc(l.balance.unconfirmed)} unconfirmed` : ''}` : `${usdt(l.balance.confirmed ?? l.balance.available)} available`) : '');
+  if (mrr) {
+    const rows = (L.rentals ?? []).slice(0, 20).map(r => {
+      const lv = (l.rentals ?? []).find(x => x.id === r.id) ?? r;
+      const live = lv.end && lv.end > now && !lv.ended;
+      return `<tr><td class="mono">${r.url ? ext(r.url, esc(String(r.id))) : esc(String(r.id))}</td><td>${esc(r.rig_name ?? String(r.rig))}<span class="muted"> · rpi ${r.rpi ?? '–'}</span></td><td><span class="st ${live ? 'st-sent' : 'st-sim'}">${live ? 'mining' : lv.ended || (lv.end && lv.end <= now) ? 'ended' : 'starting'}</span></td><td class="num">${esc(lv.hash_average ?? r.nice ?? '–')}H/s</td><td class="num">${r.hours} h</td><td class="num">${btcFmt(r.price_ph_day ?? 0, 6)} BTC/PH/day</td><td class="num">${btc(r.paid_btc)}</td><td>${lv.end ? time(lv.end) : '–'}</td></tr>`;
+    }).join('');
+    $('btOrder').innerHTML = '<tr><th>Rental</th><th>Rig</th><th>Status</th><th class="num">Hashrate</th><th class="num">Length</th><th class="num">Price</th><th class="num">Paid</th><th>Ends</th></tr>' +
+      (rows || `<tr><td colspan="8" class="empty">${c.writes ? `No rental yet. The first one is placed once ${c.min_rent_btc} BTC of rewards have landed on the marketplace.` : 'The engine is not armed: no rental to show.'}</td></tr>`);
+  } else {
+    const o = l.order;
+    $('btOrder').innerHTML = '<tr><th>Order</th><th>Status</th><th class="num">Speed</th><th class="num">Limit</th><th class="num">Price</th><th class="num">Spent</th><th class="num">Left</th></tr>' +
+      (o ? `<tr><td class="mono">${esc(o.id)}</td><td><span class="st ${o.alive ? 'st-sent' : 'st-sim'}">${esc(o.status ?? '–')}</span></td><td class="num">${ehRate(o.speed_eh)}</td><td class="num">${ehRate(o.limit)}</td><td class="num">${btcFmt(o.price, 2)} USDT/EH/day</td><td class="num">${usdt(o.spent)}</td><td class="num">${usdt(o.available)}</td></tr>`
+        : `<tr><td colspan="7" class="empty">${c.writes ? `No live order yet. The first one is placed once ${c.order_min_usdt} USDT of rewards have reached NiceHash.` : 'The engine is not armed: no order to show.'}</td></tr>`);
+  }
   $('btPayouts').innerHTML = '<tr><th>Time</th><th>Transaction</th><th class="num">Amount</th><th>Block</th><th>From</th></tr>' +
-    ((l.chain?.payouts ?? []).map((p, i) => `<tr style="animation-delay:${i * 20}ms"><td>${time(p.at)}</td><td><a href="https://mempool.space/tx/${esc(p.txid)}" target="_blank" rel="noopener">${esc(p.txid.slice(0, 12))}…</a></td><td class="num">${btcFmt(p.sats / 1e8)} BTC</td><td>${p.height ?? '<span class="muted">mempool</span>'}</td><td>${p.coinbase ? '<span class="st st-sent">coinbase</span>' : 'pool wallet'}</td></tr>`).join('')
+    ((l.chain?.payouts ?? []).map((p, i) => `<tr style="animation-delay:${i * 20}ms"><td>${time(p.at)}</td><td>${ext(`https://mempool.space/tx/${p.txid}`, esc(p.txid.slice(0, 12)) + '…')}</td><td class="num">${btcFmt(p.sats / 1e8)} BTC</td><td>${p.height ?? '<span class="muted">mempool</span>'}</td><td>${p.coinbase ? '<span class="st st-sent">coinbase</span>' : 'pool wallet'}</td></tr>`).join('')
       || `<tr><td colspan="5" class="empty">${c.btc_address ? 'Nothing has landed on the address yet.' : 'No payout address set.'}</td></tr>`);
+  const swapRow = x => {
+    if (!x.channel) return { at: x.at, step: 'swap', what: `${sol(x.lamports)} SOL → ${usdt(x.usdt)}`, link: solLink(x.sig) };
+    const links = [solLink(x.sig), ext(`https://scan.chainflip.io/channels/${x.channel}`, 'channel')];
+    if (x.egress_tx) links.push(ext(`https://mempool.space/tx/${x.egress_tx}`, 'btc tx'));
+    const got = x.egress_sats ? `${btcFmt(x.egress_sats / 1e8)} BTC` : `~${btcFmt((x.quoted_sats ?? 0) / 1e8)} BTC`;
+    return { at: x.at, step: 'swap', what: `${sol(x.lamports)} SOL → ${got} <span class="st ${x.state === 'COMPLETED' ? 'st-sent' : x.state === 'FAILED' ? 'st-queued' : 'st-sim'}">${esc((x.state ?? 'waiting').toLowerCase())}</span>`, link: links.join(' · '), bad: x.state === 'FAILED' };
+  };
   const items = [
     ...L.claims.map(x => ({ at: x.at, step: 'claim', what: `${sol(x.lamports)} SOL from the creator vault`, link: solLink(x.sig) })),
-    ...L.swaps.map(x => ({ at: x.at, step: 'swap', what: `${sol(x.lamports)} SOL → ${usdt(x.usdt)}`, link: solLink(x.sig) })),
+    ...L.swaps.map(swapRow),
+    ...(L.rentals ?? []).map(x => ({ at: x.at, step: 'rent', what: `${esc(x.nice ?? '')} for ${x.hours} h on ${esc(x.rig_name ?? String(x.rig))} · ${btc(x.paid_btc)}`, link: x.url ? ext(x.url, `rental ${esc(String(x.id))}`) : `<span class="mono">${esc(String(x.id))}</span>` })),
     ...L.deposits.map(x => ({ at: x.at, step: 'deposit', what: `${usdt(x.usdt)} → NiceHash`, link: solLink(x.sig) })),
     ...L.orders.map(x => ({ at: x.at, step: 'order', what: `${usdt(x.usdt)} · ${ehRate(x.limit_eh)} at ${btcFmt(x.price, 2)} USDT/EH/day`, link: `<span class="mono">${esc(x.id)}</span>` })),
     ...L.refills.map(x => ({ at: x.at, step: 'refill', what: `${usdt(x.usdt)} added to the order`, link: `<span class="mono">${esc(x.id)}</span>` })),
@@ -332,8 +368,8 @@ async function loadBtc() {
     (items.map((x, i) => `<tr style="animation-delay:${i * 15}ms"><td>${time(x.at)}</td><td><span class="st ${x.bad ? 'st-queued' : 'st-sent'}">${x.step}</span></td><td>${x.what}</td><td>${x.link}</td></tr>`).join('')
       || '<tr><td colspan="4" class="empty">No receipts yet.</td></tr>');
   setText('btNote', c.writes
-    ? `Armed${c.dry ? ' · dry run (logs only, nothing moves)' : ''}. Hashpower is bought on ${c.nh_host.replace('https://', '')}; the pool is paid to the address above, never to a NiceHash wallet.`
-    : 'Not armed: the server has no engine wallet or NiceHash keys, so only the public side (pool and chain) is live.');
+    ? `Armed${c.dry ? ' · dry run (logs only, nothing moves)' : ''}. ${mrr ? 'SOL becomes BTC on Chainflip and rents rigs on MiningRigRentals' : 'Hashpower is bought on NiceHash'}; the pool pays the address above, never a marketplace wallet.`
+    : `Not armed: the server has no engine wallet or ${mrr ? 'MiningRigRentals' : 'NiceHash'} keys, so only the public side (pool, chain, market) is live.`);
   btcTimer = setTimeout(loadBtc, 15_000);
 }
 

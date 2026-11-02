@@ -29,16 +29,17 @@ Open http://localhost:8787. Out of the box it runs **simulated**: every round pa
 
 `SHA-256(seed ‖ nonce)` with a 32-byte seed and an 8-byte big-endian nonce, must start with `difficulty` zero bits. A proof at difficulty *d* credits 2^d hashes. Difficulty per address targets about one proof every 4 s.
 
-## Bitcoin engine (creator rewards → hashrate)
+## Bitcoin engine (creator rewards → hashrate, no KYC)
 
-`engine/btc.js` turns the coin's pump.fun creator rewards into real SHA-256 hashpower, with a public receipt at every hop:
+`engine/btc.js` turns the coin's pump.fun creator rewards into real SHA-256 hashpower without an exchange account or identity check, with a public receipt at every hop:
 
 1. **Claim** creator rewards (pumpkit `claimCreatorFees`) → Solana tx.
-2. **Swap** SOL above `BTC_KEEP_SOL` to USDT on Jupiter → Solana tx.
-3. **Deposit** the USDT on the Solana network to NiceHash's deposit address (NiceHash takes USDT/USDC on Solana; SOL itself is delisted) → Solana tx.
-4. **Hashpower**: the NiceHash USDT balance becomes a `SHA256ASICBOOST_USDT` STANDARD order pointed at the pool (first order needs 300 USDT, NiceHash's minimum; later claims refill it). Price = lowest paying price on the public book × BTC/USD × `NH_PRICE_MARGIN`.
-5. **Mine**: pool username is the public `BTC_ADDRESS` (Ocean by default, which pays from the coinbase). The page reads hashrate from `api.ocean.xyz` and payouts from `mempool.space`.
+2. **Swap** SOL above `BTC_KEEP_SOL` to native BTC on [Chainflip](https://chainflip.io) (`engine/chainflip.js`, official SDK): a deposit channel whose destination is the rig marketplace's BTC deposit address. Receipts: the Solana tx into the channel, the channel id on scan.chainflip.io, the BTC egress tx on mempool.space. If the price moves past `CF_SLIPPAGE_PCT` the SOL is refunded to the engine wallet. Chainflip needs at least 40 000 sats out per swap (≈ 0.36 SOL), so rewards accumulate to `CF_MIN_SOL` first.
+3. **Rent**: the BTC balance on [MiningRigRentals](https://www.miningrigrentals.com) (`engine/mrr.js`) rents the cheapest reliable `sha256` rig (rpi ≥ `MRR_RPI_MIN`, price ≤ `MRR_MAX_PRICE_X` × market low) against a pool profile pointed at our pool, for as many hours as the balance covers (up to `MRR_MAX_HOURS`). Receipt: rental id + rig page.
+4. **Mine**: pool username is the public `BTC_ADDRESS` (Ocean by default, which pays from the coinbase). The page reads hashrate from `api.ocean.xyz` and payouts from `mempool.space`.
 
-The `/bitcoin` page (`GET /api/btc`) shows the live order, pool hashrate, BTC received and every receipt with its link. Without `PRIVATE_KEY` + NiceHash keys it still shows the public side.
+The `/bitcoin` page (`GET /api/btc`) shows live rentals, pool hashrate, BTC received and every receipt with its link. Without `PRIVATE_KEY` + marketplace keys it still shows the public side.
 
-Set up: create a NiceHash API key (permissions VBTD, MAPO, PRCO, VHOR), fill the `NH_*`, `PRIVATE_KEY` and `BTC_ADDRESS` vars, run once with `BTC_ENGINE=1 BTC_DRY=1` to see the plan in the logs, then `BTC_DRY=0`. `NH_TEST=1` targets api-test.nicehash.com.
+Set up: create a MiningRigRentals API key with the *rent* permission, fill `MRR_API_KEY`/`MRR_API_SECRET`, `PRIVATE_KEY` and `BTC_ADDRESS`, run once with `BTC_ENGINE=1 BTC_DRY=1` to see the plan in the logs (`would swap … would rent rig …`), then `BTC_DRY=0`.
+
+`HASH_PROVIDER=nicehash` keeps the older path (Jupiter SOL→USDT → NiceHash USDT order, `engine/nicehash.js`), which needs a KYC'd NiceHash account and 300 USDT for the first order.
