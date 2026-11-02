@@ -1,8 +1,8 @@
 # Satmine
 
-Mine sats in your browser. Your tab solves SHA-256 puzzles; every verified proof is a share of the round pot, paid in SOL.
+Fees become hashrate. The coin's pump.fun creator rewards are claimed, swapped to native BTC and spent on real SHA-256 rigs, automatically and continuously; the home page is that loop, live. Browser mining (`/mine`) is the side quest: your tab solves the pool's SHA-256 puzzles and every verified proof is a share of the round pot, paid in SOL.
 
-Pixel-art bitcoin mine (pickaxe, cart of ₿ coins, lantern, bats), odometer digits, hex-scramble labels, segmented round ruler, toasts and a blurred-cave backdrop on the sub-pages. Pages: Mine, Stats, Leaderboard, Rounds (+ round detail), Ledger, Benchmark, How it works.
+Pixel-art bitcoin mine (pickaxe, cart of ₿ coins, lantern, bats), odometer digits, hex-scramble labels, segmented round ruler, toasts and a blurred-cave backdrop on the sub-pages. Pages: Engine (home), Mine (browser), Stats, Leaderboard, Rounds (+ round detail), Ledger, Benchmark, How it works.
 
 ## Run
 

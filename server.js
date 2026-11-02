@@ -28,7 +28,7 @@ const CFG = {
 };
 const SIMULATED = !CFG.secret;
 const WALLET = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-const PAGES = ['/', '/stats', '/leaderboard', '/rounds', '/ledger', '/benchmark', '/bitcoin', '/rules'];
+const PAGES = ['/', '/mine', '/stats', '/leaderboard', '/rounds', '/ledger', '/benchmark', '/bitcoin', '/rules'];
 const btc = new BtcEngine();
 
 // ---------- state ----------

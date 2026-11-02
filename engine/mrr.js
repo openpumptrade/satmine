@@ -90,6 +90,7 @@ export class MRR {
     const r = await this.call('PUT', '/rental', { body: { rig: Number(rig), length: Number(hours), profile: Number(profile), currency } });
     return MRR.rental(Array.isArray(r) ? r[0] : r);
   }
+  async extend(id, hours) { const r = await this.call('PUT', `/rental/${id}/extend`, { body: { length: Number(hours) } }); return { cost: Number(r?.cost ?? 0), new_hours: Number(r?.new_hrs ?? 0), ok: r?.success !== false }; }
   async rental(id) { const r = await this.call('GET', `/rental/${id}`); return MRR.rental(Array.isArray(r) ? r[0] : r); }
   async rentals({ limit = 20 } = {}) { const r = await this.call('GET', '/rental', { query: { limit, type: 'renter' } }); return (r?.rentals ?? (Array.isArray(r) ? r : [])).map(MRR.rental); }
   static rental(x = {}) {

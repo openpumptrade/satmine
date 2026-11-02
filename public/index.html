@@ -19,7 +19,8 @@
   <aside class="rail">
     <a class="logo" href="/" data-nav aria-label="Satmine"><img src="/logo-small.svg" alt=""></a>
     <nav>
-      <a href="/" data-nav><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg><span>Mine</span></a>
+      <a href="/" data-nav><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4"/></svg><span>Engine</span></a>
+      <a href="/mine" data-nav><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg><span>Mine in your browser</span></a>
       <a href="/stats" data-nav><svg viewBox="0 0 24 24"><path d="M4 19h16M5 15l4-5 4 3 6-7"/></svg><span>Stats</span></a>
       <a href="/leaderboard" data-nav><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg><span>Leaderboard</span></a>
       <a href="/rounds" data-nav><svg viewBox="0 0 24 24"><path d="M12 4 3 8.5l9 4.5 9-4.5zM3 12.5l9 4.5 9-4.5M3 16.5 12 21l9-4.5"/></svg><span>Rounds</span></a>
@@ -34,18 +35,20 @@
     </a>
     <span class="conn" id="conn" title="connecting"><i></i></span>
   </aside>
+  <p class="fig" aria-hidden="true"><b id="figBlock">Block –</b><i></i><span id="figHalving">Next halving 2028</span><i></i><span>Ore: SHA-256</span></p>
 
 
-  <!-- ================= Mine ================= -->
-  <main class="view mine" data-view="/">
+  <!-- ================= Engine (home) ================= -->
+  <main class="view mine home" data-view="/">
     <header class="hero">
-      <p class="eyebrow"><span class="brandword">SATMINE</span><span id="roundLabel">round #–</span></p>
-      <h1>Mine sats.<br>Get <em>paid.</em></h1>
-      <p class="lede">Your device chips at SHA-256 puzzles in this tab. When a round closes, the pot is split by verified work.</p>
-      <ol class="chips" id="howto">
-        <li><b>1</b>Paste a Solana address</li>
-        <li><b>2</b>Tune your rig</li>
-        <li><b>3</b>Press start</li>
+      <p class="eyebrow"><span class="brandword">SATMINE</span><span id="homeLabel">creator rewards → hashrate</span></p>
+      <h1>Fees become<br><em>hashrate.</em></h1>
+      <p class="lede">Every creator reward this coin earns is claimed, swapped to Bitcoin and spent on real SHA-256 rigs pointed at a pool that pays a public address. Automatically, every cycle, for as long as the coin trades.</p>
+      <ol class="chips">
+        <li><b>1</b>Claim</li>
+        <li><b>2</b>Swap to BTC</li>
+        <li><b>3</b>Rent rigs</li>
+        <li><b>4</b>Mine</li>
       </ol>
       <div class="ca" id="ca">
         <span class="ca-k">CA</span>
@@ -53,6 +56,55 @@
         <button class="ca-btn" id="caCopy" hidden>Copy</button>
         <a class="ca-btn" id="caLink" target="_blank" rel="noopener" hidden>pump.fun ↗</a>
       </div>
+    </header>
+
+    <section class="card net">
+      <div class="card-head"><span class="label">Flywheel</span><span class="tag" id="fwState">live</span></div>
+      <div class="grid2">
+        <div class="stat"><span class="label">Hashrate now</span><b id="fwTh">0</b><em id="fwThSub">TH/s rented</em></div>
+        <div class="stat"><span class="label">Paid-for rig time</span><b id="fwUntil">–</b><em id="fwUntilSub">no rig running</em></div>
+        <div class="stat"><span class="label">Bitcoin mined</span><b id="fwBtc">0</b><em id="fwBtcSub">BTC on the payout address</em></div>
+        <div class="stat"><span class="label">Fees converted</span><b id="fwSol">0</b><em id="fwSolSub">SOL claimed so far</em></div>
+      </div>
+      <div class="round">
+        <div class="row-between"><span class="label">Next cycle in</span><span class="mono strong" id="fwLeft">–</span></div>
+        <div class="seg" id="fwRuler"></div>
+        <span class="muted small" id="fwVault">vault: –</span>
+      </div>
+    </section>
+
+    <section class="card rig">
+      <div class="card-head"><span class="label">The loop</span><span class="state" id="fwLoopState"><i></i><b>idle</b></span></div>
+      <ol class="loop" id="fwLoop"></ol>
+    </section>
+
+    <section class="card earn">
+      <div class="card-head"><span class="label">Receipts</span><a class="muted mono small" href="/bitcoin" data-nav>all ↗</a></div>
+      <ol class="rounds receipts" id="fwReceipts"></ol>
+      <div class="card-head sub"><span class="label">Pool</span><span class="muted small" id="fwPoolName">OCEAN</span></div>
+      <p class="muted small" id="fwPool">–</p>
+    </section>
+
+    <div class="control">
+      <div class="bar">
+        <a class="go wide" href="/mine" data-nav>Mine in your browser too →</a>
+      </div>
+      <p class="consent">Side quest: your own CPU/GPU chips at the pool's SHA-256 puzzles for a share of each round's SOL pot.</p>
+    </div>
+    <span class="hint">click the block to swing</span>
+  </main>
+
+  <!-- ================= Mine (browser side quest) ================= -->
+  <main class="view mine" data-view="/mine" hidden>
+    <header class="hero">
+      <p class="eyebrow"><span class="brandword">SATMINE</span><span id="roundLabel">round #–</span></p>
+      <h1>Mine sats.<br>Get <em>paid.</em></h1>
+      <p class="lede">The side quest: your device chips at SHA-256 puzzles in this tab and the round pot is split by verified work. The real hashrate lives on the <a href="/" data-nav class="strong">engine</a>.</p>
+      <ol class="chips" id="howto">
+        <li><b>1</b>Paste a Solana address</li>
+        <li><b>2</b>Tune your rig</li>
+        <li><b>3</b>Press start</li>
+      </ol>
     </header>
 
     <section class="card net">
@@ -114,7 +166,6 @@
       <p class="consent">Address only, nothing to sign. Uses your CPU and GPU only while running. Paid automatically at <span class="threshold">0.01</span> SOL.</p>
     </div>
     <span class="hint">click the block to swing</span>
-    <p class="fig" aria-hidden="true"><b id="figBlock">Block –</b><i></i><span id="figHalving">Next halving 2028</span><i></i><span>Ore: SHA-256</span></p>
   </main>
 
   <!-- ================= Other pages ================= -->

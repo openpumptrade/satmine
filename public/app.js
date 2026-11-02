@@ -9,7 +9,7 @@ import { Miner, short } from './miner.js';
 const $ = id => document.getElementById(id);
 const miner = new Miner();
 const WALLET = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-const PAGES = ['/', '/stats', '/leaderboard', '/rounds', '/ledger', '/benchmark', '/bitcoin', '/rules'];
+const PAGES = ['/', '/mine', '/stats', '/leaderboard', '/rounds', '/ledger', '/benchmark', '/bitcoin', '/rules'];
 
 let pool = null;       // latest /api/state
 let you = null;        // latest /api/wallet/:addr
@@ -53,22 +53,24 @@ function segments(el, fraction, n = 24) {
 function route() {
   const roundId = location.pathname.match(/^\/rounds\/(\d+)$/)?.[1];
   const path = roundId ? '/rounds' : PAGES.includes(location.pathname) ? location.pathname : '/';
-  const isMine = path === '/';
-  document.querySelector('[data-view="/"]').hidden = !isMine;
-  document.querySelector('[data-view="page"]').hidden = isMine;
-  document.body.classList.toggle('backdrop', !isMine);
-  scene.setBackdrop(!isMine);
+  const stage = path === '/' || path === '/mine';   // the pit is the stage on both
+  document.querySelector('[data-view="/"]').hidden = path !== '/';
+  document.querySelector('[data-view="/mine"]').hidden = path !== '/mine';
+  document.querySelector('[data-view="page"]').hidden = stage;
+  document.body.classList.toggle('backdrop', !stage);
+  scene.setBackdrop(!stage);
   for (const a of document.querySelectorAll('.rail nav a')) a.classList.toggle('on', a.getAttribute('href') === path);
-  if (!isMine) {
+  if (!stage) {
     for (const s of document.querySelectorAll('[data-page]')) s.hidden = s.dataset.page !== path;
     renderPool();
   }
+  if (path === '/') loadHome();
   if (path === '/stats') loadStats();
   if (path === '/rounds') roundId ? loadRound(Number(roundId)) : loadRounds();
   if (path === '/benchmark') loadBench();
   if (path === '/bitcoin') loadBtc();
   closeSettings();
-  enter(document.querySelector(isMine ? '[data-view="/"]' : '[data-view="page"]'));
+  enter(document.querySelector(path === '/' ? '[data-view="/"]' : path === '/mine' ? '[data-view="/mine"]' : '[data-view="page"]'));
 }
 
 // Staggered entrance for the visible view, and hex-scramble its static labels.
@@ -301,7 +303,6 @@ async function loadBtc() {
   const acct = a => ext(`https://solscan.io/account/${a}`, esc(a));
   const now = Date.now();
   const liveRentals = (l.rentals ?? []).filter(r => r.end && r.end > now && !r.ended);
-  const parseNice = n => { const m = /([\d.]+)\s*([KMGTPE]?)/i.exec(n ?? ''); if (!m) return 0; return Number(m[1]) * ({ '': 1, K: 1e3, M: 1e6, G: 1e9, T: 1e12, P: 1e15, E: 1e18 }[m[2].toUpperCase()] ?? 1); };
   if (mrr) {
     const hs = liveRentals.reduce((a, r) => a + parseNice(r.hash_average ?? r.hash_advertised), 0);
     const [sv, su] = rate(hs);
@@ -372,6 +373,67 @@ async function loadBtc() {
     : `Not armed: the server has no engine wallet or ${mrr ? 'MiningRigRentals' : 'NiceHash'} keys, so only the public side (pool, chain, market) is live.`);
   btcTimer = setTimeout(loadBtc, 15_000);
 }
+
+// ---------- engine home ----------
+let homeTimer = null, homeData = null, homeCoinAt = 0;
+const parseNice = n => { const m = /([\d.]+)\s*([KMGTPE]?)/i.exec(String(n ?? '')); return m ? Number(m[1]) * ({ '': 1, K: 1e3, M: 1e6, G: 1e9, T: 1e12, P: 1e15, E: 1e18 }[m[2].toUpperCase()] ?? 1) : 0; };
+const until = t => { const s = Math.max(0, Math.round((t - Date.now()) / 1000)); return s >= 3600 ? `${Math.floor(s / 3600)}h ${String(Math.floor(s / 60) % 60).padStart(2, '0')}m` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+async function loadHome() {
+  clearTimeout(homeTimer);
+  if (location.pathname !== '/') return;
+  try { homeData = await getJson('/api/btc'); } catch { homeTimer = setTimeout(loadHome, 15_000); return; }
+  renderHome();
+  homeTimer = setTimeout(loadHome, 15_000);
+}
+function renderHome() {
+  const d = homeData; if (!d || location.pathname !== '/') return;
+  const { config: c, live: l, totals: t, ledger: L, flow: f } = d;
+  const now = Date.now();
+  const ext = (href, text) => `<a href="${esc(href)}" target="_blank" rel="noopener">${text}</a>`;
+  // flywheel card
+  R('fwTh', (f.th_now ?? 0).toFixed(f.th_now >= 100 ? 0 : 1));
+  setText('fwThSub', `TH/s on ${f.rigs} rig${f.rigs === 1 ? '' : 's'}${l.pool?.hashrate_300s ? ` · pool sees ${rate(l.pool.hashrate_300s).join(' ')}` : ''}`);
+  R('fwUntil', f.until ? until(f.until) : '–');
+  setText('fwUntilSub', f.until ? `of rig time left · ends ${time(f.until)}` : f.armed ? 'no rig running yet' : 'engine not armed');
+  R('fwBtc', ((l.chain?.received_sats ?? 0) / 1e8).toFixed(8));
+  setText('fwBtcSub', `BTC on the payout address · ${l.chain?.payouts?.length ?? 0} payouts`);
+  R('fwSol', sol(t.claimed_lamports));
+  setText('fwSolSub', `SOL claimed · ${(t.swapped_sats / 1e8).toFixed(6)} BTC bought · ${t.rented_hours} rig-hours`);
+  $('fwState').textContent = f.armed ? (c.dry ? 'dry run' : 'live') : 'standby';
+  $('fwState').style.color = f.armed && !c.dry ? '' : 'var(--accent)';
+  if (f.next_run) { setText('fwLeft', until(f.next_run)); segments($('fwRuler'), 1 - Math.max(0, f.next_run - now) / f.cycle_ms); }
+  else { setText('fwLeft', `every ${Math.round(f.cycle_ms / 60000)} min`); segments($('fwRuler'), 0); }
+  const vault = l.vault;
+  setText('fwVault', vault ? `vault: ${vault.claimable_sol.toFixed(4)} SOL claimable · next swap at ${c.min_swap_sol} SOL` : c.creator ? 'vault: reading…' : 'vault: creator wallet not set');
+  // the loop
+  const swaps = L.swaps ?? [], rentals = L.rentals ?? [], claims = L.claims ?? [];
+  const pendingSwap = swaps.find(s => s.channel && !['COMPLETED', 'FAILED'].includes(s.state));
+  const lastSwap = swaps[0], lastClaim = claims[0], lastRent = rentals[0];
+  const liveRig = f.rigs > 0;
+  const step = (n, name, what, state, cls) => `<li class="${cls}"><b>${n}</b><span>${name}<small>${what}</small></span><em>${state}</em></li>`;
+  $('fwLoop').innerHTML =
+    step('01', 'Claim creator rewards', lastClaim ? `${sol(lastClaim.lamports)} SOL · ${ago(lastClaim.at)}` : vault ? `${vault.claimable_sol.toFixed(4)} SOL waiting in the vault` : 'pump.fun creator vault → engine wallet', vault && vault.claimable_sol >= 0.01 ? 'ready' : lastClaim ? 'done' : 'waiting', vault && vault.claimable_sol >= 0.01 ? 'wait' : lastClaim ? 'on' : '') +
+    step('02', 'Swap SOL → BTC', pendingSwap ? `${sol(pendingSwap.lamports)} SOL in flight · ${esc((pendingSwap.state ?? 'waiting').toLowerCase())}` : lastSwap ? `${sol(lastSwap.lamports)} SOL → ${((lastSwap.egress_sats ?? lastSwap.quoted_sats ?? 0) / 1e8).toFixed(6)} BTC · ${ago(lastSwap.at)}` : `Chainflip, native BTC, from ${c.min_swap_sol} SOL`, pendingSwap ? 'swapping' : lastSwap ? 'done' : 'waiting', pendingSwap ? 'wait' : lastSwap ? 'on' : '') +
+    step('03', 'Rent SHA-256 rigs', lastRent ? `${esc(lastRent.nice ?? '')} · ${lastRent.hours} h · ${(lastRent.paid_btc ?? 0).toFixed(8)} BTC · ${ago(lastRent.at)}` : l.market ? `market low ${(l.market.lowest ?? 0).toFixed(6)} BTC per PH/day · ${l.market.available_rigs} rigs free` : 'MiningRigRentals, cheapest reliable rig', liveRig ? 'running' : lastRent ? 'ended' : 'waiting', liveRig ? 'on' : '') +
+    step('04', 'Mine to the public address', l.pool ? `${rate(l.pool.hashrate_300s ?? 0).join(' ')} at the pool · ${(l.pool.unpaid_btc ?? 0).toFixed(8)} BTC unpaid` : c.btc_address ? `${esc(c.pool_name)} · ${esc(c.pool)}` : 'payout address not set', l.pool?.hashrate_300s ? 'hashing' : 'idle', l.pool?.hashrate_300s ? 'on' : '');
+  $('fwLoopState').className = `state ${liveRig ? 'mining' : ''}`;
+  $('fwLoopState').querySelector('b').textContent = liveRig ? 'running' : f.armed ? 'armed' : 'standby';
+  // receipts
+  const solLink = sig => ext(`https://solscan.io/tx/${sig}`, 'solscan ↗');
+  const items = [
+    ...claims.map(x => ({ at: x.at, k: 'claim', what: `${sol(x.lamports)} SOL`, link: solLink(x.sig) })),
+    ...swaps.map(x => ({ at: x.at, k: 'swap', what: `${sol(x.lamports)} SOL → BTC`, link: x.channel ? ext(`https://scan.chainflip.io/channels/${x.channel}`, 'chainflip ↗') : solLink(x.sig) })),
+    ...rentals.map(x => ({ at: x.at, k: x.extended ? 'extend' : 'rent', what: `${esc(x.nice ?? '')} · ${x.hours} h`, link: x.url ? ext(x.url, 'rig ↗') : `#${esc(String(x.id))}` })),
+    ...(l.chain?.payouts ?? []).map(p => ({ at: p.at, k: 'payout', what: `${(p.sats / 1e8).toFixed(8)} BTC${p.coinbase ? ' · coinbase' : ''}`, link: ext(`https://mempool.space/tx/${p.txid}`, 'mempool ↗') })),
+  ].sort((a, b) => b.at - a.at).slice(0, 6);
+  $('fwReceipts').innerHTML = items.map(x => `<li><span>${esc(x.k)}</span><em>${x.what}</em><b>${x.link}</b></li>`).join('') || '<li class="empty">No receipts yet. The first claim starts the loop.</li>';
+  $('fwPoolName').textContent = c.pool_name;
+  $('fwPool').innerHTML = c.btc_address ? `${ext(`https://mempool.space/address/${c.btc_address}`, esc(c.btc_address))} · ${/ocean/.test(c.pool) ? ext(`https://ocean.xyz/stats/${c.btc_address}`, 'pool stats ↗') : esc(c.pool)}` : `${esc(c.pool)} · payout address not set yet`;
+  // the pit works as hard as the rented rigs do
+  scene.setActivity({ mining: liveRig, hashrate: liveRig ? Math.min(1, f.th_now / 500) * 50e6 : 0 });
+  if (liveRig && now - homeCoinAt > 7000) { homeCoinAt = now; scene.proof({ difficulty: 24, accepted: true }); }
+}
+setInterval(() => { if (location.pathname === '/' && homeData) renderHome(); }, 1000);
 
 // ---------- caption under the pit: live Bitcoin tip ----------
 async function loadTip() {
@@ -484,7 +546,7 @@ function renderMiner() {
     .map(l => `<li class="${l.tone}">${time(l.at)}  ${esc(l.text)}</li>`).join('');
 
   // 3D: activity follows hashrate; every new proof flies out of the core.
-  scene.setActivity({ mining: miner.status === 'mining', hashrate: miner.hashrate });
+  if (location.pathname !== '/') scene.setActivity({ mining: miner.status === 'mining', hashrate: miner.hashrate });
   for (; seen.accepted < miner.accepted; seen.accepted++) {
     scene.proof({ difficulty: miner.lastProof?.difficulty ?? 0, accepted: true });
     floatUp($('proofs').parentElement, `+2^${miner.lastProof?.difficulty ?? '?'}`);

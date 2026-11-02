@@ -31,6 +31,7 @@ export const CFG = {
   // Solana side
   rpc: env('RPC_URL', 'https://api.mainnet-beta.solana.com'),
   secret: env('PRIVATE_KEY', ''),
+  creator: env('CREATOR_WALLET', ''),                     // public key of the coin's creator; lets the page show the vault before the engine is armed
   keep_sol: Number(env('BTC_KEEP_SOL', 0.02)),
   min_claim_sol: Number(env('BTC_MIN_CLAIM_SOL', 0.01)),
   // Chainflip (SOL → BTC)
@@ -43,6 +44,7 @@ export const CFG = {
   mrr_rpi_min: Number(env('MRR_RPI_MIN', 85)),
   mrr_hash_min_th: Number(env('MRR_HASH_MIN_TH', 10)),
   mrr_max_hours: Number(env('MRR_MAX_HOURS', 24)),
+  mrr_extend_window_min: Number(env('MRR_EXTEND_WINDOW_MIN', 30)),  // extend the live rental instead of renting a second rig while it has this long left
   mrr_max_price_x: Number(env('MRR_MAX_PRICE_X', 1.5)),       // skip rigs priced above 1.5× the market's lowest
   // NiceHash (legacy)
   nh_key: env('NH_API_KEY', ''), nh_secret: env('NH_API_SECRET', ''), nh_org: env('NH_ORG_ID', ''),
@@ -61,12 +63,13 @@ export const CFG = {
 };
 
 const log = (...a) => console.log(new Date().toISOString(), '[btc]', ...a);
+const parseNice = n => { const m = /([\d.]+)\s*([KMGTPE]?)/i.exec(String(n ?? '')); return m ? Number(m[1]) * ({ '': 1, K: 1e3, M: 1e6, G: 1e9, T: 1e12, P: 1e15, E: 1e18 }[m[2].toUpperCase()] ?? 1) : 0; };
 const DONE = new Set(['COMPLETED', 'FAILED']);
 
 export class BtcEngine {
   constructor() {
     this.state = { claims: [], swaps: [], deposits: [], orders: [], refills: [], rentals: [], errors: [], wallet: null, mrrDeposit: null, profileId: null, nhDeposit: null, poolId: null, orderId: null, lastRun: null };
-    this.live = { order: null, rentals: [], pool: null, chain: null, market: null, balance: null, at: 0 };
+    this.live = { order: null, rentals: [], pool: null, chain: null, market: null, balance: null, vault: null, at: 0 };
     this.nh = new NiceHash({ key: CFG.nh_key, secret: CFG.nh_secret, orgId: CFG.nh_org, host: CFG.nh_host });
     this.mrr = new MRR({ key: CFG.mrr_key, secret: CFG.mrr_secret });
     this.cf = new Chainflip({ slippagePct: CFG.cf_slippage });
@@ -87,12 +90,21 @@ export class BtcEngine {
   get marketReady() { return this.mrrMode ? this.mrr.configured : this.nh.configured; }
   get writes() { return CFG.enabled && !!CFG.secret && this.marketReady && !!CFG.btc_address; }
 
+  // Hashrate on the books right now and how far the paid-for rig time reaches.
+  flow() {
+    const now = Date.now();
+    const live = (this.live.rentals ?? []).filter(r => r.end && r.end > now && !r.ended);
+    const th = live.reduce((a, r) => a + parseNice(r.hash_average ?? r.hash_advertised ?? '0'), 0) / 1e12;
+    const until = live.reduce((a, r) => Math.max(a, r.end), 0) || null;
+    return { th_now: +th.toFixed(2), rigs: live.length, until, next_run: this.state.lastRun ? this.state.lastRun + CFG.every_ms : null, armed: this.writes, cycle_ms: CFG.every_ms };
+  }
   view() {
     const sum = (l, k) => this.state[l].reduce((a, x) => a + (x[k] ?? 0), 0);
     return {
+      flow: this.flow(),
       config: {
         enabled: CFG.enabled, dry: CFG.dry, writes: this.writes, every_ms: CFG.every_ms, provider: this.mrrMode ? 'mrr' : 'nicehash',
-        wallet: this.state.wallet, btc_address: CFG.btc_address || null,
+        wallet: this.state.wallet, creator: CFG.creator || this.state.wallet || null, btc_address: CFG.btc_address || null,
         mrr_deposit: this.state.mrrDeposit, nh_deposit: this.state.nhDeposit,
         pool: `${CFG.pool_host}:${CFG.pool_port}`, pool_name: CFG.pool_name,
         algorithm: this.mrrMode ? CFG.mrr_algo : CFG.algorithm, limit_eh: CFG.limit, order_min_usdt: CFG.order_min_usdt, order_id: this.state.orderId,
@@ -123,15 +135,16 @@ export class BtcEngine {
   async poll() {
     const now = Date.now();
     const open = this.state.rentals.filter(r => !r.end || r.end > now - 3600_000).slice(0, 5);
-    const [pool, chain, market, order, rentals, balance] = await Promise.all([
+    const [pool, chain, market, order, rentals, balance, vault] = await Promise.all([
       this.poolStats().catch(() => null),
       this.chainStats().catch(() => null),
       this.mrrMode ? MRR.algo(CFG.mrr_algo).catch(() => null) : NiceHash.marketPrice(CFG.algorithm, CFG.market, CFG.nh_host).catch(() => null),
       !this.mrrMode && this.state.orderId && this.nh.configured ? this.nh.order(this.state.orderId).then(o => ({ id: o.id, status: o.status?.code, alive: o.alive, price: Number(o.price), limit: Number(o.limit), amount: Number(o.amount), available: Number(o.availableAmount), spent: Number(o.payedAmount), speed_eh: Number(o.acceptedCurrentSpeed ?? 0), rigs: o.rigsCount, end: o.endTs })).catch(() => this.live.order) : null,
       this.mrrMode && this.mrr.configured ? Promise.all(open.map(r => this.mrr.rental(r.id).catch(() => r))) : [],
       this.mrrMode ? (this.mrr.configured ? this.mrr.balance('BTC').catch(() => this.live.balance) : null) : (this.nh.configured ? this.nh.balance(CFG.market).catch(() => this.live.balance) : null),
+      this.vaultStats().catch(() => this.live.vault),
     ]);
-    this.live = { pool, chain, market, order, rentals, balance, at: now };
+    this.live = { pool, chain, market, order, rentals, balance, vault, at: now };
     await this.trackSwaps().catch(e => log(`swaps: ${e.message}`));
   }
   // Follow open Chainflip swaps until the BTC egress tx is known.
@@ -144,6 +157,14 @@ export class BtcEngine {
       if (st.expired && st.state === 'WAITING') s.state = 'FAILED';
     }
     if (pending.length) this.save();
+  }
+  // Creator rewards waiting in the pump.fun vault (public read; needs only the creator's address).
+  async vaultStats() {
+    const creator = CFG.creator || this.state.wallet;
+    if (!creator) return null;
+    await this.ctxLoad();
+    const v = await this.kit.creatorVaultBalances(this.ctx, { creator });
+    return { creator, claimable_sol: v.sol, at: Date.now() };
   }
   async poolStats() {
     if (!CFG.btc_address || !/ocean/.test(CFG.pool_host)) return null;
@@ -165,11 +186,15 @@ export class BtcEngine {
   }
 
   // ---------- the round ----------
-  async kitLoad() {
+  async ctxLoad() {
     if (this.kit) return;
     const [kit, fees, jup, transfer, token, wallet] = await Promise.all([import('pumpkit'), import('pumpkit/pumpfun/fees'), import('pumpkit/jupiter'), import('pumpkit/transfer'), import('pumpkit/token'), import('pumpkit/wallet')]);
     this.kit = { ...kit, ...fees, ...jup, ...transfer, ...token, ...wallet };
     this.ctx = this.kit.createContext({ rpcUrl: CFG.rpc, slippagePct: 1, log: { log, warn: log, error: log } });
+  }
+  async kitLoad() {
+    await this.ctxLoad();
+    if (this.walletKp) return;
     this.walletKp = this.kit.keypairFromSecret(CFG.secret);
     this.state.wallet = this.walletKp.publicKey.toBase58();
     this.save();
@@ -230,9 +255,25 @@ export class BtcEngine {
         this.state.profileId = await this.mrr.ensureProfile({ name: `${CFG.pool_name} satmine`, algo: CFG.mrr_algo, host: CFG.pool_host, port: CFG.pool_port, user: `${CFG.btc_address}.${CFG.pool_worker}`, pass: 'x' });
         this.save(); log(`mrr pool profile ${this.state.profileId}`);
       }
+      const budget = confirmed * 0.98;  // leave room for rounding
+      // Keep the flow unbroken: while a rig is still running for us, buy more hours on it before renting a second one.
+      const now = Date.now();
+      const live = (this.live.rentals ?? []).filter(r => r.end && r.end > now && !r.ended).sort((a, b) => b.end - a.end)[0];
+      if (live) {
+        const rec = this.state.rentals.find(r => r.id === live.id);
+        const perHour = rec?.paid_btc && rec?.hours ? rec.paid_btc / rec.hours : 0;
+        const hours = perHour ? Math.floor((budget / perHour) * 100) / 100 : 0;
+        if (hours >= 0.25) {
+          if (CFG.dry) return log(`would extend rental ${live.id} by ${hours} h ≈ ${(hours * perHour).toFixed(8)} BTC (runs until ${new Date(live.end).toISOString()})`);
+          try {
+            const r = await this.mrr.extend(live.id, hours);
+            this.push('rentals', { id: live.id, rig: live.rig, rig_name: rec?.rig_name ?? live.rig_name, nice: rec?.nice, price_ph_day: rec?.price_ph_day, rpi: rec?.rpi, url: rec?.url, hours, paid_btc: r.cost || hours * perHour, extended: true, end: live.end + hours * 3600_000, pool: `${CFG.pool_host}:${CFG.pool_port}` });
+            return log(`extended rental ${live.id} by ${hours} h · ${r.cost || hours * perHour} BTC`);
+          } catch (e) { log(`extend failed (${e.message}); renting a new rig instead`); }
+        }
+      }
       const [rigs, algo] = await Promise.all([MRR.rigs({ type: CFG.mrr_algo, hashMinTh: CFG.mrr_hash_min_th, rpiMin: CFG.mrr_rpi_min }), MRR.algo(CFG.mrr_algo)]);
       const cap = (algo?.lowest || Infinity) * CFG.mrr_max_price_x;
-      const budget = confirmed * 0.98;  // leave room for rounding
       const pick = rigs
         .filter(r => r.btc_hour > 0 && r.price_ph_day <= cap && r.btc_hour * r.minhours <= budget)
         .map(r => ({ ...r, hours: Math.min(CFG.mrr_max_hours, r.maxhours, Math.floor((budget / r.btc_hour) * 100) / 100) }))
