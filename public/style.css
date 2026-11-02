@@ -475,3 +475,9 @@ h2.section { font-size: 15px; font-weight: 600; letter-spacing: -.01em; margin: 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* reduced motion: skip entrance animations (also what the README screenshots use) */
+@media (prefers-reduced-motion: reduce) {
+  .view.enter > *, .view.enter .sheet article:not([hidden]) > * { animation: none !important; }
+  .fx-scramble { animation: none !important; }
+}

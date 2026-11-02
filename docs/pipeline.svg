@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" font-family="ui-monospace, Menlo, monospace" shape-rendering="crispEdges">
+  <defs>
+    <style>
+      .box{fill:#16161d;stroke:#3a3a46;stroke-width:2}
+      .t{fill:#f3efe8;font-size:17px;font-weight:700}
+      .s{fill:#b9b2a6;font-size:12px}
+      .r{fill:#f7931a;font-size:11px}
+      .k{fill:#7f786d;font-size:11px}
+      .arrow{stroke:#f7931a;stroke-width:3;fill:none}
+    </style>
+    <marker id="m" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#f7931a"/></marker>
+  </defs>
+  <rect width="1200" height="420" fill="#0a0a0d"/>
+  <text x="40" y="44" class="t" font-size="22">SATMINE · creator rewards → hashrate, every cycle</text>
+  <text x="40" y="66" class="k">one Railway process · no exchange account · no identity check · every hop leaves a public receipt</text>
+
+  <!-- boxes -->
+  <g transform="translate(40,110)">
+    <rect class="box" width="200" height="150"/>
+    <text x="16" y="34" class="r">01 · SOLANA</text>
+    <text x="16" y="62" class="t">Claim</text>
+    <text x="16" y="86" class="s">pump.fun creator vault</text>
+    <text x="16" y="104" class="s">→ engine wallet (SOL)</text>
+    <text x="16" y="134" class="k">receipt: solscan tx</text>
+  </g>
+  <g transform="translate(300,110)">
+    <rect class="box" width="200" height="150"/>
+    <text x="16" y="34" class="r">02 · CHAINFLIP</text>
+    <text x="16" y="62" class="t">Swap</text>
+    <text x="16" y="86" class="s">native SOL in,</text>
+    <text x="16" y="104" class="s">native BTC out</text>
+    <text x="16" y="134" class="k">receipt: channel id + btc tx</text>
+  </g>
+  <g transform="translate(560,110)">
+    <rect class="box" width="200" height="150"/>
+    <text x="16" y="34" class="r">03 · MININGRIGRENTALS</text>
+    <text x="16" y="62" class="t">Rent</text>
+    <text x="16" y="86" class="s">cheapest reliable sha256 rig,</text>
+    <text x="16" y="104" class="s">extend while it runs</text>
+    <text x="16" y="134" class="k">receipt: rental id + rig page</text>
+  </g>
+  <g transform="translate(820,110)">
+    <rect class="box" width="200" height="150"/>
+    <text x="16" y="34" class="r">04 · OCEAN POOL</text>
+    <text x="16" y="62" class="t">Mine</text>
+    <text x="16" y="86" class="s">username = public BTC address,</text>
+    <text x="16" y="104" class="s">paid from the coinbase</text>
+    <text x="16" y="134" class="k">receipt: ocean.xyz + mempool.space</text>
+  </g>
+
+  <!-- arrows -->
+  <path class="arrow" marker-end="url(#m)" d="M240,185 L296,185"/>
+  <path class="arrow" marker-end="url(#m)" d="M500,185 L556,185"/>
+  <path class="arrow" marker-end="url(#m)" d="M760,185 L816,185"/>
+  <!-- loop back -->
+  <path class="arrow" marker-end="url(#m)" d="M920,260 L920,320 L140,320 L140,266" stroke-dasharray="6 6"/>
+  <text x="440" y="312" class="r">every BTC_EVERY_MS (10 min) · claims accumulate to CF_MIN_SOL, then swap · rentals from MRR_MIN_RENT_BTC</text>
+
+  <!-- side quest -->
+  <g transform="translate(1050,110)">
+    <rect width="110" height="150" fill="#0f0f13" stroke="#2a2a33" stroke-width="2" stroke-dasharray="4 4"/>
+    <text x="12" y="34" class="k">SIDE QUEST</text>
+    <text x="12" y="62" class="s" font-weight="700">/mine</text>
+    <text x="12" y="86" class="k">browser PoW</text>
+    <text x="12" y="104" class="k">pool, paid</text>
+    <text x="12" y="122" class="k">in SOL</text>
+  </g>
+
+  <text x="40" y="392" class="k">watchers: /api/btc exposes config, totals, live (pool, chain, market, rentals, vault) and the full ledger · the home page renders it every 15 s</text>
+</svg>
