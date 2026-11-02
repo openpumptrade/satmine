@@ -1,4 +1,4 @@
-// Goldvein pool server: tickets, proof verification, rounds, payouts, stats,
+// Satmine pool server: tickets, proof verification, rounds, payouts, stats,
 // the live SSE stream and static hosting of ./public. No framework.
 //
 // Runs simulated out of the box (a fixed pot per round, payouts logged but no
@@ -392,5 +392,5 @@ createServer(async (req, res) => {
   await initTreasury();
   openRound();
   btc.start();
-  log(`goldvein on :${CFG.port} · ${SIMULATED ? 'simulated' : 'live payouts'} · ${CFG.round_ms / 1000}s rounds · pot ${CFG.reward_per_round / SOL} SOL`);
+  log(`satmine on :${CFG.port} · ${SIMULATED ? 'simulated' : 'live payouts'} · ${CFG.round_ms / 1000}s rounds · pot ${CFG.reward_per_round / SOL} SOL`);
 });

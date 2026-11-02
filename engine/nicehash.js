@@ -36,7 +36,7 @@ export class NiceHash {
     if (raw !== undefined) parts.push(raw);
     const digest = createHmac('sha256', this.secret).update(parts.join('\0')).digest('hex');
     const headers = {
-      'X-Time': time, 'X-Nonce': nonce, 'X-Request-Id': nonce, 'X-User-Agent': 'goldvein', 'X-User-Lang': 'en',
+      'X-Time': time, 'X-Nonce': nonce, 'X-Request-Id': nonce, 'X-User-Agent': 'satmine', 'X-User-Lang': 'en',
       'X-Organization-Id': this.orgId, 'X-Auth': `${this.key}:${digest}`,
     };
     if (raw !== undefined) headers['Content-Type'] = 'application/json';

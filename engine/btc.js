@@ -55,7 +55,7 @@ export const CFG = {
   btc_address: env('BTC_ADDRESS', ''),
   pool_host: env('POOL_HOST', 'mine.ocean.xyz'),
   pool_port: Number(env('POOL_PORT', 3334)),
-  pool_worker: env('POOL_WORKER', 'goldvein'),
+  pool_worker: env('POOL_WORKER', 'satmine'),
   pool_name: env('POOL_NAME', 'OCEAN'),
   data_file: env('BTC_DATA_FILE', new URL('../data/btc.json', import.meta.url).pathname),
 };
@@ -227,7 +227,7 @@ export class BtcEngine {
       this.live.balance = { confirmed };
       if (confirmed < CFG.mrr_min_rent_btc) return log(`mrr balance ${confirmed.toFixed(8)} BTC < ${CFG.mrr_min_rent_btc}; waiting`);
       if (!this.state.profileId) {
-        this.state.profileId = await this.mrr.ensureProfile({ name: `${CFG.pool_name} goldvein`, algo: CFG.mrr_algo, host: CFG.pool_host, port: CFG.pool_port, user: `${CFG.btc_address}.${CFG.pool_worker}`, pass: 'x' });
+        this.state.profileId = await this.mrr.ensureProfile({ name: `${CFG.pool_name} satmine`, algo: CFG.mrr_algo, host: CFG.pool_host, port: CFG.pool_port, user: `${CFG.btc_address}.${CFG.pool_worker}`, pass: 'x' });
         this.save(); log(`mrr pool profile ${this.state.profileId}`);
       }
       const [rigs, algo] = await Promise.all([MRR.rigs({ type: CFG.mrr_algo, hashMinTh: CFG.mrr_hash_min_th, rpiMin: CFG.mrr_rpi_min }), MRR.algo(CFG.mrr_algo)]);

@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Goldvein</title>
-  <meta name="description" content="Goldvein: strike gold in your browser. Every verified SHA-256 proof is a share of the round pot, paid in SOL.">
-  <meta name="goldvein-api" content="https://goldvein-production.up.railway.app">
+  <title>Satmine</title>
+  <meta name="description" content="Satmine: mine sats in your browser. Every verified SHA-256 proof is a share of the round pot, paid in SOL, and the coin's fees buy real Bitcoin hashrate.">
+  <meta name="satmine-api" content="https://goldvein-production.up.railway.app">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,10 +14,10 @@
   <script type="module" src="/app.js"></script>
 </head>
 <body>
-  <canvas id="pit" class="pit" aria-label="A pixel-art gold vein: the prospector swings with your hashrate and every proof cracks out a nugget. Click to swing."></canvas>
+  <canvas id="pit" class="pit" aria-label="A pixel-art bitcoin mine: the miner swings with your hashrate and every proof cracks a coin out of the block. Click to swing."></canvas>
 
   <aside class="rail">
-    <a class="logo" href="/" data-nav aria-label="Goldvein"><img src="/logo-small.svg" alt=""></a>
+    <a class="logo" href="/" data-nav aria-label="Satmine"><img src="/logo-small.svg" alt=""></a>
     <nav>
       <a href="/" data-nav><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg><span>Mine</span></a>
       <a href="/stats" data-nav><svg viewBox="0 0 24 24"><path d="M4 19h16M5 15l4-5 4 3 6-7"/></svg><span>Stats</span></a>
@@ -28,9 +28,9 @@
       <a href="/bitcoin" data-nav><svg viewBox="0 0 24 24"><path d="M9 4v16M13 4v16M7 7h7a2.5 2.5 0 0 1 0 5H7M7 12h8a2.5 2.5 0 0 1 0 5H7"/></svg><span>Bitcoin</span></a>
       <a href="/rules" data-nav><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/></svg><span>How it works</span></a>
     </nav>
-    <a class="social" href="https://x.com/Goldvein_Sol" target="_blank" rel="noopener" aria-label="Goldvein on X">
+    <a class="social" href="https://x.com/Satmine_Sol" target="_blank" rel="noopener" aria-label="Satmine on X">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-      <span>@Goldvein_Sol</span>
+      <span>@Satmine_Sol</span>
     </a>
     <span class="conn" id="conn" title="connecting"><i></i></span>
   </aside>
@@ -39,8 +39,8 @@
   <!-- ================= Mine ================= -->
   <main class="view mine" data-view="/">
     <header class="hero">
-      <p class="eyebrow"><span class="brandword">GOLDVEIN</span><span id="roundLabel">round #–</span></p>
-      <h1>Strike gold.<br>Get <em>paid.</em></h1>
+      <p class="eyebrow"><span class="brandword">SATMINE</span><span id="roundLabel">round #–</span></p>
+      <h1>Mine sats.<br>Get <em>paid.</em></h1>
       <p class="lede">Your device chips at SHA-256 puzzles in this tab. When a round closes, the pot is split by verified work.</p>
       <ol class="chips" id="howto">
         <li><b>1</b>Paste a Solana address</li>
@@ -113,15 +113,15 @@
       </div>
       <p class="consent">Address only, nothing to sign. Uses your CPU and GPU only while running. Paid automatically at <span class="threshold">0.01</span> SOL.</p>
     </div>
-    <span class="hint">click the vein to swing</span>
-    <p class="fig" aria-hidden="true"><b>Vein 07</b><i></i>Depth 340 m<i></i><span>Ore: SHA-256</span></p>
+    <span class="hint">click the block to swing</span>
+    <p class="fig" aria-hidden="true"><b id="figBlock">Block –</b><i></i><span id="figHalving">Next halving 2028</span><i></i><span>Ore: SHA-256</span></p>
   </main>
 
   <!-- ================= Other pages ================= -->
   <main class="view page" data-view="page" hidden>
     <div class="sheet">
       <article data-page="/leaderboard" hidden>
-        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>leaderboard</p>
+        <p class="eyebrow"><span class="brandword">SATMINE</span>leaderboard</p>
         <h1>Leaderboard</h1>
         <p class="lede">Who is mining, and how each round's pot is shared.</p>
         <div class="tabs" id="boardTabs">
@@ -140,7 +140,7 @@
       </article>
 
       <article data-page="/stats" hidden>
-        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>stats</p>
+        <p class="eyebrow"><span class="brandword">SATMINE</span>stats</p>
         <h1>Stats</h1>
         <p class="lede">How the pool is doing: hashrate, miners, pots and payouts over time.</p>
         <div class="grid4">
@@ -161,7 +161,7 @@
       </article>
 
       <article data-page="/rounds" hidden>
-        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>rounds</p>
+        <p class="eyebrow"><span class="brandword">SATMINE</span>rounds</p>
         <div id="roundsList">
           <h1>Rounds</h1>
           <p class="lede">Every settled round. Open one to see exactly how its pot was split and paid.</p>
@@ -190,7 +190,7 @@
       </article>
 
       <article data-page="/benchmark" hidden>
-        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>benchmark</p>
+        <p class="eyebrow"><span class="brandword">SATMINE</span>benchmark</p>
         <h1>Benchmark</h1>
         <p class="lede">Measure this device: 5 seconds on every CPU thread, then 5 seconds on the GPU. Nothing is mined or sent while it runs.</p>
         <div class="bench">
@@ -225,7 +225,7 @@
       </article>
 
       <article data-page="/ledger" hidden>
-        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>ledger</p>
+        <p class="eyebrow"><span class="brandword">SATMINE</span>ledger</p>
         <h1>Ledger</h1>
         <p class="lede">Every payout, with its transaction. Balances are paid at round close once they cross the threshold.</p>
         <div class="kv" id="treasury"></div>
@@ -233,7 +233,7 @@
       </article>
 
       <article data-page="/bitcoin" hidden>
-        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>bitcoin</p>
+        <p class="eyebrow"><span class="brandword">SATMINE</span>bitcoin</p>
         <h1>Fees mine Bitcoin.</h1>
         <p class="lede">The coin's creator rewards buy real SHA-256 hashpower. No exchange account, no identity check: Solana transactions, a Chainflip swap into native BTC, a rig rental and the Bitcoin that lands on a public address.</p>
         <div class="grid4">
@@ -261,7 +261,7 @@
       </article>
 
       <article data-page="/rules" hidden>
-        <p class="eyebrow"><span class="brandword">GOLDVEIN</span>how it works</p>
+        <p class="eyebrow"><span class="brandword">SATMINE</span>how it works</p>
         <h1>How it works</h1>
         <p class="lede">From a random seed to SOL in your wallet.</p>
         <div class="flow">

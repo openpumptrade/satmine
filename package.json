@@ -1,7 +1,7 @@
 {
-  "name": "goldvein",
+  "name": "satmine",
   "version": "1.0.0",
-  "description": "Goldvein: strike gold in your browser. Browser proof-of-work pool paid in SOL by share of verified work.",
+  "description": "Satmine: mine sats in your browser. Browser proof-of-work pool paid in SOL by share of verified work.",
   "type": "module",
   "main": "server.js",
   "scripts": {

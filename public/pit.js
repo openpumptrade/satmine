@@ -3,25 +3,25 @@
 // lamp light the chamber in posterized, dithered bands.
 //
 //   setActivity({ mining, hashrate })  the miner swings faster with hashrate; each strike throws sparks
-//   proof({ difficulty, accepted })    the rock cracks open and a gem flies into the cart
+//   proof({ difficulty, accepted })    the block cracks open and a coin flies into the cart
 //   wave()                             round close: the full cart rolls away and an empty one rolls in
 //   (every 12-20 s a bat flaps through the tunnel)
 //   setBackdrop(on)                    calmer motion while it sits behind a page
 //   clicking the cave makes the miner take one swing
 
 const hex = s => [parseInt(s.slice(1, 3), 16), parseInt(s.slice(3, 5), 16), parseInt(s.slice(5, 7), 16)];
-const ROCK = ['#22191a', '#2e231f', '#3b2d25', '#4b392d', '#5c4636'].map(hex);
-const BACK = ['#120d0b', '#16100d', '#1b1410'].map(hex);
-const RIM = hex('#7a5c46');
-const FLOOR_TOP = hex('#6b5040');
-const GEMS = ['#ff4d6d', '#3ef0a0', '#ffc83a', '#c77dff'].map(hex);
-const GOLD = hex('#ffc83a');
-const SPARK = hex('#fff2a8');
+const ROCK = ['#17171c', '#1f1f26', '#2a2a33', '#363640', '#45454f'].map(hex);
+const BACK = ['#0b0b0e', '#0f0f13', '#131317'].map(hex);
+const RIM = hex('#5c5c68');
+const FLOOR_TOP = hex('#4e4e5a');
+const GEMS = ['#f7931a', '#ffb347', '#e07f12', '#ffd27a'].map(hex);  // sats come in one colour
+const GOLD = hex('#f7931a');
+const SPARK = hex('#ffd9a8');
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
 const LEVELS = [0.18, 0.34, 0.55, 0.8, 1.05];
 
 const PAL = {
-  H: '#ffc83a', h: '#c9922a', L: '#fff6c8', S: '#f0b48a', s: '#c98a63', E: '#2a1a12', M: '#5a3a22',
+  H: '#f7931a', h: '#b8640c', L: '#ffe2bf', S: '#f0b48a', s: '#c98a63', E: '#2a1a12', M: '#5a3a22',
   B: '#c4502f', b: '#8f3720', O: '#6b4f3a', o: '#4e3a2b', K: '#2a2420', G: '#8c6b4a',
 };
 for (const k in PAL) PAL[k] = hex(PAL[k]);
@@ -48,7 +48,7 @@ const BAT = [
   ['K.......K', 'KK.KKK.KK', '.KKKKKKK.', '...K.K...'],
   ['.........', '...KKK...', 'KKKKKKKKK', 'K..K.K..K'],
 ];
-const GEM = ['..X..', '.XWX.', 'XXXXX', '.XXX.', '..X..'];
+const GEM = ['.XXX.', 'XXWXX', 'XWXWX', 'XXWXX', '.XXX.'];   // a coin, ₿ side up
 
 const clamp01 = t => Math.max(0, Math.min(1, t));
 const easeOut = t => 1 - (1 - t) ** 3;
@@ -356,7 +356,7 @@ export class MineScene {
     const sway = Math.round(Math.sin(t * 1.3) * (this.cart.state === 'home' ? 0.6 : 1.6));
     for (let y = ly - 14; y < ly; y++) if (y % 2 === 0) this.px(lx + Math.round(sway * (y - ly + 14) / 14), y, [90, 80, 70]);
     const glow = 0.85 + Math.sin(t * 11) * 0.15;
-    this.sprite(['.KKK.', 'KLLLK', 'KLHLK', 'KLLLK', '.KKK.'], lx + sway - 2, ly, { K: [60, 48, 36], L: [255, 220 * glow, 120 * glow], H: [255, 250, 220] });
+    this.sprite(['.KKK.', 'KLLLK', 'KLHLK', 'KLLLK', '.KKK.'], lx + sway - 2, ly, { K: [60, 48, 36], L: [255, 200 * glow, 130 * glow], H: [255, 240, 220] });
   }
 
   // The rock face: slides in after a break, cracks spread with each strike.
@@ -369,8 +369,8 @@ export class MineScene {
       const edge = i === 0 || j === 0;
       this.px(rx + i + ox, ry + j, edge ? [138, 106, 84] : hash(i + 40, j + 9) > 0.7 ? [107, 85, 70] : [92, 72, 58]);
     }
-    // a vein of ore showing through
-    this.px(rx + 7 + ox, ry + 5, GOLD); this.px(rx + 8 + ox, ry + 6, GOLD); this.px(rx + 5 + ox, ry + 8, GEMS[0]);
+    // a seam of orange showing through the block
+    this.px(rx + 7 + ox, ry + 5, GOLD); this.px(rx + 8 + ox, ry + 6, GOLD); this.px(rx + 5 + ox, ry + 8, GEMS[3]);
     const cracks = Math.min(5, Math.floor(this.strikes / 2));
     for (let k = 0; k < cracks; k++) {
       let x = rx + 1 + ox, y = ry + 2 + k * 2;
@@ -433,7 +433,7 @@ export class MineScene {
       const x = l.x * P, y = (l.y - easeOut(k) * 14) * P;
       ctx.fillStyle = `rgba(0,0,0,${a})`;
       ctx.fillText(l.text, x + P / 2, y + P / 2);
-      ctx.fillStyle = l.bad ? `rgba(255,90,80,${a})` : `rgba(255,200,58,${a})`;
+      ctx.fillStyle = l.bad ? `rgba(255,90,80,${a})` : `rgba(247,147,26,${a})`;
       ctx.fillText(l.text, x, y);
     }
     ctx.textAlign = 'start';

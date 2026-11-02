@@ -1,8 +1,8 @@
-# Goldvein
+# Satmine
 
-Strike gold in your browser. Your tab solves SHA-256 puzzles; every verified proof is a share of the round pot, paid in SOL.
+Mine sats in your browser. Your tab solves SHA-256 puzzles; every verified proof is a share of the round pot, paid in SOL.
 
-Pixel-art mine (pickaxe, cart, lantern, bats), odometer digits, hex-scramble labels, segmented round ruler, toasts and a blurred-cave backdrop on the sub-pages. Pages: Mine, Stats, Leaderboard, Rounds (+ round detail), Ledger, Benchmark, How it works.
+Pixel-art bitcoin mine (pickaxe, cart of ₿ coins, lantern, bats), odometer digits, hex-scramble labels, segmented round ruler, toasts and a blurred-cave backdrop on the sub-pages. Pages: Mine, Stats, Leaderboard, Rounds (+ round detail), Ledger, Benchmark, How it works.
 
 ## Run
 
@@ -16,14 +16,14 @@ Open http://localhost:8787. Out of the box it runs **simulated**: every round pa
 
 ## Layout
 
-- `public/` static frontend (no build step). `config.js` reads `<meta name="goldvein-api">` for the API origin when hosted apart from the server (Vercel + Railway).
+- `public/` static frontend (no build step). `config.js` reads `<meta name="satmine-api">` for the API origin when hosted apart from the server (Vercel + Railway).
 - `server.js` the pool: tickets (`POST /api/challenge`), proof verification (`POST /api/proof`), per-wallet vardiff, rounds, payouts, stats, SSE stream (`/api/stream`), bench table, static hosting with SPA fallback. State persists to `data/state.json`.
 
 ## Going live
 
 1. Set `TOKEN_MINT` to the pump.fun CA so the mine page shows it.
 2. Set `TREASURY_SECRET` (base58 or JSON array) and `RPC_URL`. The server then pays balances over `PAYOUT_THRESHOLD_SOL` at every round close with a plain SOL transfer, capped by what the wallet holds minus a 0.01 SOL fee reserve. Fund that wallet from the creator-fee claims.
-3. Deploy `server.js` on Railway and `public/` on Vercel; put the Railway URL in the `goldvein-api` meta tag of `public/index.html`.
+3. Deploy `server.js` on Railway and `public/` on Vercel; put the Railway URL in the `satmine-api` meta tag of `public/index.html`.
 
 ## Puzzle
 

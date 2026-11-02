@@ -373,6 +373,18 @@ async function loadBtc() {
   btcTimer = setTimeout(loadBtc, 15_000);
 }
 
+// ---------- caption under the pit: live Bitcoin tip ----------
+async function loadTip() {
+  try {
+    const h = Number(await (await fetch('https://mempool.space/api/blocks/tip/height')).text());
+    if (!h) return;
+    const next = Math.ceil(h / 210000) * 210000;
+    setText('figBlock', `Block ${h.toLocaleString()}`);
+    setText('figHalving', `${(next - h).toLocaleString()} blocks to halving`);
+  } catch {}
+}
+loadTip(); setInterval(loadTip, 120_000);
+
 // ---------- controls ----------
 const walletInput = $('wallet');
 walletInput.value = load('wallet') ?? '';
