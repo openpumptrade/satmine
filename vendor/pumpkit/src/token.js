@@ -29,7 +29,13 @@ export async function ataOf(ctx, { mint, owner, programId }) {
 
 export async function tokenBalanceRaw(ctx, { owner, mint, programId }) {
   const ata = await ataOf(ctx, { mint, owner, programId });
-  try { return BigInt((await ctx.connection.getTokenAccountBalance(ata)).value.amount); } catch { return 0n; }
+  try { return BigInt((await ctx.connection.getTokenAccountBalance(ata)).value.amount); } catch {}
+  // some public RPCs refuse getTokenAccountBalance: read the raw token account instead (amount = u64 LE at byte 64)
+  try {
+    const info = await ctx.connection.getAccountInfo(ata);
+    if (!info || info.data.length < 72) return 0n;
+    return info.data.readBigUInt64LE(64);
+  } catch { return 0n; }
 }
 
 /// Right after a buy the RPC can still return the OLD balance — poll until it moves past `above`.
