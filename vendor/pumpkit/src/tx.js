@@ -29,7 +29,17 @@ export async function sendTx(ctx, { instructions, payer, signers, computeUnits =
       }
     }
     const sig = await connection.sendTransaction(tx, { skipPreflight: true, maxRetries: 5 });
-    const conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, "confirmed");
+    let conf;
+    try { conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, "confirmed"); }
+    catch (e) {
+      // some public RPCs report "block height exceeded" for a tx that did land: check the signature before giving up
+      for (let i = 0; i < 15; i++) {
+        const st = (await connection.getSignatureStatuses([sig], { searchTransactionHistory: true })).value[0];
+        if (st?.confirmationStatus) { conf = { value: { err: st.err } }; break; }
+        await sleep(2000);
+      }
+      if (!conf) throw e;
+    }
     if (conf.value.err) {
       const t = await connection.getTransaction(sig, { maxSupportedTransactionVersion: 0 }).catch(() => null);
       const logs = (t?.meta?.logMessages || []).filter((l) => /Error|failed/i.test(l)).slice(-3).join(" | ");
