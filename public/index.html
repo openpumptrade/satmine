@@ -23,7 +23,7 @@
     <a class="logo" href="/" data-nav aria-label="Satmine"><img src="/logo-small.png" alt=""></a>
     <nav>
       <a href="/" data-nav><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4"/></svg><span>Engine</span></a>
-      <a href="/mine" data-nav><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg><span>Mine in your browser</span></a>
+      <a href="/mine" data-nav><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg><span>Mine in your browser</span><em class="soon">soon</em></a>
       <a href="/stats" data-nav><svg viewBox="0 0 24 24"><path d="M4 19h16M5 15l4-5 4 3 6-7"/></svg><span>Stats</span></a>
       <a href="/leaderboard" data-nav><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg><span>Leaderboard</span></a>
       <a href="/rounds" data-nav><svg viewBox="0 0 24 24"><path d="M12 4 3 8.5l9 4.5 9-4.5zM3 12.5l9 4.5 9-4.5M3 16.5 12 21l9-4.5"/></svg><span>Rounds</span></a>
@@ -90,9 +90,9 @@
 
     <div class="control">
       <div class="bar">
-        <a class="go wide" href="/mine" data-nav>Mine in your browser too →</a>
+        <a class="go wide soon-cta" href="/mine" data-nav>Mine in your browser · coming soon</a>
       </div>
-      <p class="consent">Side quest: your own CPU/GPU chips at the pool's SHA-256 puzzles for a share of each round's SOL pot.</p>
+      <p class="consent">Side quest, not open yet: your own CPU/GPU will chip at the pool's SHA-256 puzzles for a share of each round's SOL pot.</p>
     </div>
     <span class="hint">click the block to swing</span>
   </main>
@@ -102,7 +102,8 @@
     <header class="hero">
       <p class="eyebrow"><span class="brandword">SATMINE</span><span id="roundLabel">round #–</span></p>
       <h1>Mine sats.<br>Get <em>paid.</em></h1>
-      <p class="lede">The side quest: your device chips at SHA-256 puzzles in this tab and the round pot is split by verified work. The real hashrate lives on the <a href="/" data-nav class="strong">engine</a>.</p>
+      <div class="soon-banner"><b>Coming soon</b><span>The browser pool is in test mode: the puzzles and the ledger run, but nothing pays out yet. The engine on the <a href="/" data-nav class="strong">home page</a> is the live product.</span></div>
+      <p class="lede">The side quest: your device will chip at SHA-256 puzzles in this tab and the round pot gets split by verified work. The real hashrate lives on the <a href="/" data-nav class="strong">engine</a>.</p>
       <ol class="chips" id="howto">
         <li><b>1</b>Paste a Solana address</li>
         <li><b>2</b>Tune your rig</li>
@@ -162,11 +163,11 @@
         <p class="muted small" id="gpuInfo"></p>
       </div>
       <div class="bar">
-        <input id="wallet" placeholder="Paste a Solana address" autocomplete="off" spellcheck="false" aria-label="Solana wallet address">
+        <input id="wallet" placeholder="Opens with the browser pool" disabled autocomplete="off" spellcheck="false" aria-label="Solana wallet address">
         <button class="icon-btn" id="settingsBtn" aria-label="Rig settings" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
-        <button id="go" class="go">Start mining</button>
+        <button id="go" class="go" disabled>Coming soon</button>
       </div>
-      <p class="consent">Address only, nothing to sign. Uses your CPU and GPU only while running. Paid automatically at <span class="threshold">0.01</span> SOL.</p>
+      <p class="consent">Not open yet. When it is: address only, nothing to sign, CPU/GPU used only while running, paid automatically at <span class="threshold">0.01</span> SOL.</p>
     </div>
     <span class="hint">click the block to swing</span>
   </main>

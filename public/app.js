@@ -490,7 +490,9 @@ if (!navigator.gpu) {
   setText('gpuInfo', 'WebGPU is not available in this browser. Try a recent Chrome, Edge or Safari.');
 }
 
+const COMING_SOON = true;
 function toggleMining() {
+  if (COMING_SOON) return;
   if (miner.status === 'mining' || miner.status === 'starting') return miner.stop();
   const v = walletInput.value.trim();
   if (!WALLET.test(v)) {
@@ -533,7 +535,7 @@ function renderMiner() {
     lastStatus = miner.status;
   }
   document.body.classList.toggle('is-mining', miner.status === 'mining');
-  $('go').textContent = running ? 'Stop mining' : 'Start mining';
+  $('go').textContent = COMING_SOON ? 'Coming soon' : running ? 'Stop mining' : 'Start mining';
   $('go').classList.toggle('stop', running);
   walletInput.disabled = running;
   if (location.pathname === '/benchmark') renderBenchButton();
