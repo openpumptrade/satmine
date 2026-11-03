@@ -341,7 +341,7 @@ export class BtcEngine {
       if (usdt < CFG.min_deposit_usdt) return;
       if (CFG.dry) return log(`would deposit ${usdt} USDT to ${this.state.nhDeposit}`);
       const r = await kit.transferTokens(ctx, { wallet: w, mint: USDT_MINT, to: this.state.nhDeposit, amountRaw: raw, decimals: USDT_DEC });
-      this.push('deposits', { sig: r.sig, usdt, to: this.state.nhDeposit });
+      this.push('deposits', { sig: r.sig, usdt, to: this.state.nhDeposit }); log(`deposited ${usdt} USDT to NiceHash · ${r.sig}`);
     } catch (e) { this.fail('deposit', e); }
   }
   async orderNicehash() {
