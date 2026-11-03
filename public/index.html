@@ -6,7 +6,10 @@
   <title>Satmine</title>
   <meta name="description" content="Satmine: mine sats in your browser. Every verified SHA-256 proof is a share of the round pot, paid in SOL, and the coin's fees buy real Bitcoin hashrate.">
   <meta name="satmine-api" content="https://goldvein-production.up.railway.app">
-  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <meta property="og:image" content="https://satmine.vercel.app/logo.png">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="/icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Pixelify+Sans:wght@500;600;700&family=Silkscreen&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
@@ -17,7 +20,7 @@
   <canvas id="pit" class="pit" aria-label="A pixel-art bitcoin mine: the miner swings with your hashrate and every proof cracks a coin out of the block. Click to swing."></canvas>
 
   <aside class="rail">
-    <a class="logo" href="/" data-nav aria-label="Satmine"><img src="/logo-small.svg" alt=""></a>
+    <a class="logo" href="/" data-nav aria-label="Satmine"><img src="/logo-small.png" alt=""></a>
     <nav>
       <a href="/" data-nav><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4"/></svg><span>Engine</span></a>
       <a href="/mine" data-nav><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg><span>Mine in your browser</span></a>

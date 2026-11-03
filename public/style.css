@@ -65,7 +65,7 @@ body.backdrop .fig { opacity: 0; }
   border-right: 2px solid var(--line-2);
 }
 .logo { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 0; background: #16161d; box-shadow: inset 0 0 0 2px var(--line-2), 3px 3px 0 rgba(0,0,0,.6); transition: transform .3s var(--ease); }
-.logo img { width: 32px; image-rendering: pixelated; height: auto; display: block; }
+.logo img { width: 42px; image-rendering: pixelated; height: auto; display: block; }
 .logo:hover { transform: translateY(-2px) rotate(-4deg); }
 .rail nav { display: flex; flex-direction: column; gap: 6px; }
 .rail nav a {

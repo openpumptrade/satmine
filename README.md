@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/icon.svg" width="72" alt="Satmine">
+  <img src="public/icon.png" width="96" alt="Satmine">
 </p>
 
 <h1 align="center">Satmine</h1>
