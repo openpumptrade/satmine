@@ -27,7 +27,7 @@ export const CFG = {
   enabled: env('BTC_ENGINE', '0') === '1',
   dry: env('BTC_DRY', '0') === '1',
   every_ms: Number(env('BTC_EVERY_MS', 600_000)),
-  provider: env('HASH_PROVIDER', 'mrr'),                   // mrr | nicehash
+  provider: env('HASH_PROVIDER', 'nicehash'),              // nicehash | mrr
   // Solana side
   rpc: env('RPC_URL', 'https://api.mainnet-beta.solana.com'),
   secret: env('PRIVATE_KEY', ''),

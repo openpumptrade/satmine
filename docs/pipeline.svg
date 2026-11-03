@@ -12,7 +12,7 @@
   </defs>
   <rect width="1200" height="420" fill="#0a0a0d"/>
   <text x="40" y="44" class="t" font-size="22">SATMINE · creator rewards → hashrate, every cycle</text>
-  <text x="40" y="66" class="k">one Railway process · no exchange account · no identity check · every hop leaves a public receipt</text>
+  <text x="40" y="66" class="k">one Railway process · no exchange account · every hop leaves a public receipt</text>
 
   <!-- boxes -->
   <g transform="translate(40,110)">
@@ -25,19 +25,19 @@
   </g>
   <g transform="translate(300,110)">
     <rect class="box" width="200" height="150"/>
-    <text x="16" y="34" class="r">02 · CHAINFLIP</text>
-    <text x="16" y="62" class="t">Swap</text>
-    <text x="16" y="86" class="s">native SOL in,</text>
-    <text x="16" y="104" class="s">native BTC out</text>
-    <text x="16" y="134" class="k">receipt: channel id + btc tx</text>
+    <text x="16" y="34" class="r">02 · JUPITER (SOLANA)</text>
+    <text x="16" y="62" class="t">Convert</text>
+    <text x="16" y="86" class="s">SOL → USDT in the engine wallet,</text>
+    <text x="16" y="104" class="s">deposited to NiceHash same cycle</text>
+    <text x="16" y="134" class="k">receipt: swap tx + deposit tx</text>
   </g>
   <g transform="translate(560,110)">
     <rect class="box" width="200" height="150"/>
-    <text x="16" y="34" class="r">03 · MININGRIGRENTALS</text>
-    <text x="16" y="62" class="t">Rent</text>
-    <text x="16" y="86" class="s">cheapest reliable sha256 rig,</text>
-    <text x="16" y="104" class="s">extend while it runs</text>
-    <text x="16" y="134" class="k">receipt: rental id + rig page</text>
+    <text x="16" y="34" class="r">03 · NICEHASH</text>
+    <text x="16" y="62" class="t">Order</text>
+    <text x="16" y="86" class="s">one standing sha256 order,</text>
+    <text x="16" y="104" class="s">refilled every cycle</text>
+    <text x="16" y="134" class="k">receipt: order id + accepted speed</text>
   </g>
   <g transform="translate(820,110)">
     <rect class="box" width="200" height="150"/>
@@ -54,7 +54,7 @@
   <path class="arrow" marker-end="url(#m)" d="M760,185 L816,185"/>
   <!-- loop back -->
   <path class="arrow" marker-end="url(#m)" d="M920,260 L920,320 L140,320 L140,266" stroke-dasharray="6 6"/>
-  <text x="440" y="312" class="r">every BTC_EVERY_MS (10 min) · claims accumulate to CF_MIN_SOL, then swap · rentals from MRR_MIN_RENT_BTC</text>
+  <text x="440" y="312" class="r">every BTC_EVERY_MS (10 min) · first order needs 300 USDT · refills from NH_REFILL_MIN_USDT · budget drains at price × speed</text>
 
   <!-- side quest -->
   <g transform="translate(1050,110)">
