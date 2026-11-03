@@ -93,10 +93,21 @@ export class BtcEngine {
   // Hashrate on the books right now and how far the paid-for rig time reaches.
   flow() {
     const now = Date.now();
+    const base = { next_run: this.state.lastRun ? this.state.lastRun + CFG.every_ms : null, armed: this.writes, cycle_ms: CFG.every_ms, provider: this.mrrMode ? 'mrr' : 'nicehash' };
+    if (!this.mrrMode) {
+      // NiceHash: one standing order; speed in EH/s, budget drains at price × speed per day.
+      const o = this.live.order;
+      const alive = o && (o.alive || ['PENDING', 'ACTIVE'].includes(o.status));
+      if (!alive) return { th_now: 0, rigs: 0, until: null, ...base };
+      const th = (o.speed_eh ?? 0) * 1e6;
+      const perDay = (o.price ?? 0) * (o.speed_eh ?? 0);
+      const until = perDay > 0 ? now + (o.available / perDay) * 86400_000 : (o.end ? Date.parse(o.end) || null : null);
+      return { th_now: +th.toFixed(2), rigs: o.rigs ?? 0, until, order_id: o.id, available_usdt: o.available, ...base };
+    }
     const live = (this.live.rentals ?? []).filter(r => r.end && r.end > now && !r.ended);
     const th = live.reduce((a, r) => a + parseNice(r.hash_average ?? r.hash_advertised ?? '0'), 0) / 1e12;
     const until = live.reduce((a, r) => Math.max(a, r.end), 0) || null;
-    return { th_now: +th.toFixed(2), rigs: live.length, until, next_run: this.state.lastRun ? this.state.lastRun + CFG.every_ms : null, armed: this.writes, cycle_ms: CFG.every_ms };
+    return { th_now: +th.toFixed(2), rigs: live.length, until, ...base };
   }
   view() {
     const sum = (l, k) => this.state[l].reduce((a, x) => a + (x[k] ?? 0), 0);

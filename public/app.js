@@ -394,35 +394,50 @@ function renderHome() {
   R('fwTh', (f.th_now ?? 0).toFixed(f.th_now >= 100 ? 0 : 1));
   setText('fwThSub', `TH/s on ${f.rigs} rig${f.rigs === 1 ? '' : 's'}${l.pool?.hashrate_300s ? ` · pool sees ${rate(l.pool.hashrate_300s).join(' ')}` : ''}`);
   R('fwUntil', f.until ? until(f.until) : '–');
-  setText('fwUntilSub', f.until ? `of rig time left · ends ${time(f.until)}` : f.armed ? 'no rig running yet' : 'engine not armed');
+  setText('fwUntilSub', f.until ? (c.provider === 'nicehash' ? 'the order budget lasts at current speed' : `of rig time left · ends ${time(f.until)}`) : f.armed ? (c.provider === 'nicehash' ? 'no order running yet' : 'no rig running yet') : 'engine not armed');
+  document.querySelectorAll('.home .chips li').forEach((li, i) => { if (i === 1) li.innerHTML = `<b>2</b>${c.provider === 'nicehash' ? 'Swap to USDT' : 'Swap to BTC'}`; if (i === 2) li.innerHTML = `<b>3</b>${c.provider === 'nicehash' ? 'Buy hashpower' : 'Rent rigs'}`; });
   R('fwBtc', ((l.chain?.received_sats ?? 0) / 1e8).toFixed(8));
   setText('fwBtcSub', `BTC on the payout address · ${l.chain?.payouts?.length ?? 0} payouts`);
   R('fwSol', sol(t.claimed_lamports));
-  setText('fwSolSub', `SOL claimed · ${(t.swapped_sats / 1e8).toFixed(6)} BTC bought · ${t.rented_hours} rig-hours`);
+  setText('fwSolSub', c.provider === 'nicehash' ? `SOL claimed · ${(t.swapped_usdt ?? 0).toFixed(2)} USDT swapped · ${(t.ordered_usdt ?? 0).toFixed(2)} USDT of hashpower` : `SOL claimed · ${(t.swapped_sats / 1e8).toFixed(6)} BTC bought · ${t.rented_hours} rig-hours`);
   $('fwState').textContent = f.armed ? (c.dry ? 'dry run' : 'live') : 'standby';
   $('fwState').style.color = f.armed && !c.dry ? '' : 'var(--accent)';
   if (f.next_run) { setText('fwLeft', until(f.next_run)); segments($('fwRuler'), 1 - Math.max(0, f.next_run - now) / f.cycle_ms); }
   else { setText('fwLeft', `every ${Math.round(f.cycle_ms / 60000)} min`); segments($('fwRuler'), 0); }
   const vault = l.vault;
-  setText('fwVault', vault ? `vault: ${vault.claimable_sol.toFixed(4)} SOL claimable · next swap at ${c.min_swap_sol} SOL` : c.creator ? 'vault: reading…' : 'vault: creator wallet not set');
+  setText('fwVault', vault ? `vault: ${vault.claimable_sol.toFixed(4)} SOL claimable${c.provider === 'nicehash' ? '' : ` · next swap at ${c.min_swap_sol} SOL`}` : c.creator ? 'vault: reading…' : 'vault: creator wallet not set');
   // the loop
   const swaps = L.swaps ?? [], rentals = L.rentals ?? [], claims = L.claims ?? [];
   const pendingSwap = swaps.find(s => s.channel && !['COMPLETED', 'FAILED'].includes(s.state));
   const lastSwap = swaps[0], lastClaim = claims[0], lastRent = rentals[0];
-  const liveRig = f.rigs > 0;
+  const liveRig = f.rigs > 0 || (f.provider === 'nicehash' && f.th_now > 0);
+  const nh = c.provider === 'nicehash';
+  const deposits = L.deposits ?? [], orders = L.orders ?? [], refills = L.refills ?? [];
+  const lastDep = deposits[0], lastOrder = orders[0], o = l.order;
   const step = (n, name, what, state, cls) => `<li class="${cls}"><b>${n}</b><span>${name}<small>${what}</small></span><em>${state}</em></li>`;
-  $('fwLoop').innerHTML =
-    step('01', 'Claim creator rewards', lastClaim ? `${sol(lastClaim.lamports)} SOL · ${ago(lastClaim.at)}` : vault ? `${vault.claimable_sol.toFixed(4)} SOL waiting in the vault` : 'pump.fun creator vault → engine wallet', vault && vault.claimable_sol >= 0.01 ? 'ready' : lastClaim ? 'done' : 'waiting', vault && vault.claimable_sol >= 0.01 ? 'wait' : lastClaim ? 'on' : '') +
+  const stepClaim = step('01', 'Claim creator rewards', lastClaim ? `${sol(lastClaim.lamports)} SOL · ${ago(lastClaim.at)}` : vault ? `${vault.claimable_sol.toFixed(4)} SOL waiting in the vault` : 'pump.fun creator vault → engine wallet', vault && vault.claimable_sol >= 0.01 ? 'ready' : lastClaim ? 'done' : 'waiting', vault && vault.claimable_sol >= 0.01 ? 'wait' : lastClaim ? 'on' : '');
+  const stepMine = step(nh ? '05' : '04', 'Mine to the public address', l.pool ? `${rate(l.pool.hashrate_300s ?? 0).join(' ')} at the pool · ${(l.pool.unpaid_btc ?? 0).toFixed(8)} BTC unpaid` : c.btc_address ? `${esc(c.pool_name)} · ${esc(c.pool)}` : 'payout address not set', l.pool?.hashrate_300s ? 'hashing' : 'idle', l.pool?.hashrate_300s ? 'on' : '');
+  if (nh) $('fwLoop').innerHTML =
+    stepClaim +
+    step('02', 'Swap SOL → USDT', lastSwap ? `${sol(lastSwap.lamports)} SOL → ${(lastSwap.usdt ?? 0).toFixed(2)} USDT · ${ago(lastSwap.at)}` : 'Jupiter, on Solana, everything above the gas reserve', lastSwap ? 'done' : 'waiting', lastSwap ? 'on' : '') +
+    step('03', 'Deposit to NiceHash', lastDep ? `${(lastDep.usdt ?? 0).toFixed(2)} USDT · ${ago(lastDep.at)}` : l.balance ? `${(l.balance.confirmed ?? l.balance.available ?? 0).toFixed(2)} / ${c.order_min_usdt} USDT for the first order` : 'USDT on Solana straight to the hashpower wallet', lastDep ? 'done' : 'waiting', lastDep ? 'on' : '') +
+    step('04', 'Buy SHA-256 hashpower', o && liveRig ? `${(o.speed_eh * 1e6).toFixed(0)} TH/s on ${o.rigs ?? 0} rigs · ${(o.available ?? 0).toFixed(2)} USDT left` : lastOrder ? `order ${esc(String(lastOrder.id)).slice(0, 8)}… · ${(lastOrder.usdt ?? 0).toFixed(2)} USDT · ${ago(lastOrder.at)}` : l.market?.price ? `market ${Number(l.market.price).toFixed(2)} USDT per EH/day` : 'NiceHash standing order, refilled every cycle', liveRig ? 'running' : lastOrder ? 'idle' : 'waiting', liveRig ? 'on' : '') +
+    stepMine;
+  else $('fwLoop').innerHTML =
+    stepClaim +
     step('02', 'Swap SOL → BTC', pendingSwap ? `${sol(pendingSwap.lamports)} SOL in flight · ${esc((pendingSwap.state ?? 'waiting').toLowerCase())}` : lastSwap ? `${sol(lastSwap.lamports)} SOL → ${((lastSwap.egress_sats ?? lastSwap.quoted_sats ?? 0) / 1e8).toFixed(6)} BTC · ${ago(lastSwap.at)}` : `Chainflip, native BTC, from ${c.min_swap_sol} SOL`, pendingSwap ? 'swapping' : lastSwap ? 'done' : 'waiting', pendingSwap ? 'wait' : lastSwap ? 'on' : '') +
     step('03', 'Rent SHA-256 rigs', lastRent ? `${esc(lastRent.nice ?? '')} · ${lastRent.hours} h · ${(lastRent.paid_btc ?? 0).toFixed(8)} BTC · ${ago(lastRent.at)}` : l.market ? `market low ${(l.market.lowest ?? 0).toFixed(6)} BTC per PH/day · ${l.market.available_rigs} rigs free` : 'MiningRigRentals, cheapest reliable rig', liveRig ? 'running' : lastRent ? 'ended' : 'waiting', liveRig ? 'on' : '') +
-    step('04', 'Mine to the public address', l.pool ? `${rate(l.pool.hashrate_300s ?? 0).join(' ')} at the pool · ${(l.pool.unpaid_btc ?? 0).toFixed(8)} BTC unpaid` : c.btc_address ? `${esc(c.pool_name)} · ${esc(c.pool)}` : 'payout address not set', l.pool?.hashrate_300s ? 'hashing' : 'idle', l.pool?.hashrate_300s ? 'on' : '');
+    stepMine;
   $('fwLoopState').className = `state ${liveRig ? 'mining' : ''}`;
   $('fwLoopState').querySelector('b').textContent = liveRig ? 'running' : f.armed ? 'armed' : 'standby';
   // receipts
   const solLink = sig => ext(`https://solscan.io/tx/${sig}`, 'solscan ↗');
   const items = [
     ...claims.map(x => ({ at: x.at, k: 'claim', what: `${sol(x.lamports)} SOL`, link: solLink(x.sig) })),
-    ...swaps.map(x => ({ at: x.at, k: 'swap', what: `${sol(x.lamports)} SOL → BTC`, link: x.channel ? ext(`https://scan.chainflip.io/channels/${x.channel}`, 'chainflip ↗') : solLink(x.sig) })),
+    ...swaps.map(x => ({ at: x.at, k: 'swap', what: `${sol(x.lamports)} SOL → ${x.usdt != null ? `${x.usdt.toFixed(2)} USDT` : 'BTC'}`, link: x.channel ? ext(`https://scan.chainflip.io/channels/${x.channel}`, 'chainflip ↗') : solLink(x.sig) })),
+    ...deposits.map(x => ({ at: x.at, k: 'deposit', what: `${(x.usdt ?? 0).toFixed(2)} USDT → NiceHash`, link: solLink(x.sig) })),
+    ...orders.map(x => ({ at: x.at, k: 'order', what: `${(x.usdt ?? 0).toFixed(2)} USDT · ${Math.round(x.limit_eh * 1e6)} TH/s cap`, link: `<span class="mono">${esc(String(x.id)).slice(0, 8)}…</span>` })),
+    ...refills.map(x => ({ at: x.at, k: 'refill', what: `${(x.usdt ?? 0).toFixed(2)} USDT`, link: `<span class="mono">${esc(String(x.id)).slice(0, 8)}…</span>` })),
     ...rentals.map(x => ({ at: x.at, k: x.extended ? 'extend' : 'rent', what: `${esc(x.nice ?? '')} · ${x.hours} h`, link: x.url ? ext(x.url, 'rig ↗') : `#${esc(String(x.id))}` })),
     ...(l.chain?.payouts ?? []).map(p => ({ at: p.at, k: 'payout', what: `${(p.sats / 1e8).toFixed(8)} BTC${p.coinbase ? ' · coinbase' : ''}`, link: ext(`https://mempool.space/tx/${p.txid}`, 'mempool ↗') })),
   ].sort((a, b) => b.at - a.at).slice(0, 6);
