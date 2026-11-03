@@ -20,7 +20,7 @@ import { Chainflip } from './chainflip.js';
 
 const env = (k, d) => (process.env[k] ?? d);
 const SOL = 1e9;
-const USDT_MINT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNUS';
+const USDT_MINT = 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB';
 const USDT_DEC = 6;
 
 export const CFG = {
