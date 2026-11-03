@@ -11,7 +11,7 @@ No exchange account. Nothing held. A public receipt at every hop.</p>
 <p align="center">
   <a href="https://satmine.vercel.app">satmine.vercel.app</a> ·
   <a href="https://satmine.vercel.app/bitcoin">live receipts</a> ·
-  <a href="https://x.com/Satmine_Sol">@Satmine_Sol</a>
+  <a href="https://x.com/satminefun">@satminefun</a>
 </p>
 
 <p align="center">
