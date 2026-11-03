@@ -34,6 +34,7 @@ export const CFG = {
   creator: env('CREATOR_WALLET', ''),                     // public key of the coin's creator; lets the page show the vault before the engine is armed
   keep_sol: Number(env('BTC_KEEP_SOL', 0.02)),
   min_claim_sol: Number(env('BTC_MIN_CLAIM_SOL', 0.01)),
+  token_mint: env('TOKEN_MINT', ''),                        // the coin; with a fee-sharing config the engine distributes its vault to the recipient wallet
   // Chainflip (SOL → BTC)
   cf_slippage: Number(env('CF_SLIPPAGE_PCT', 1)),
   cf_min_sol: Number(env('CF_MIN_SOL', 0.4)),               // protocol minimum is ~0.068 SOL in / 40 000 sats out, so ≈0.36 SOL at current prices
@@ -175,7 +176,12 @@ export class BtcEngine {
     if (!creator) return null;
     await this.ctxLoad();
     const v = await this.kit.creatorVaultBalances(this.ctx, { creator });
-    return { creator, claimable_sol: v.sol, at: Date.now() };
+    let shared = 0, sharing = null;
+    if (CFG.token_mint) {
+      sharing = await this.kit.readSharingConfig(this.ctx, CFG.token_mint).catch(() => null);
+      if (sharing) shared = await this.kit.sharedFeesWaiting(this.ctx, CFG.token_mint).catch(() => 0);
+    }
+    return { creator, claimable_sol: v.sol + shared, creator_vault_sol: v.sol, shared_vault_sol: shared, sharing: sharing ? { shareholders: sharing.shareholders } : null, at: Date.now() };
   }
   async poolStats() {
     if (!CFG.btc_address || !/ocean/.test(CFG.pool_host)) return null;
@@ -226,6 +232,21 @@ export class BtcEngine {
   async claim() {
     const { kit, ctx, walletKp: w } = this;
     try {
+      // fee-sharing coin: the shared vault is distributed to the shareholders first (we are the recipient)
+      if (CFG.token_mint) {
+        const cfg = await this.kit.readSharingConfig(ctx, CFG.token_mint).catch(() => null);
+        if (cfg) {
+          const waiting = await this.kit.sharedFeesWaiting(ctx, CFG.token_mint).catch(() => 0);
+          if (waiting >= CFG.min_claim_sol) {
+            if (CFG.dry) log(`would distribute ${waiting} SOL of shared fees`);
+            else {
+              const r = await this.kit.distributeSharedFees(ctx, { mint: CFG.token_mint, wallet: w });
+              this.push('claims', { sig: r.sig, lamports: Math.round(r.gainedSol * SOL), shared: true });
+              log(`distributed ${waiting} SOL of shared fees · got ${r.gainedSol} SOL · ${r.sig}`);
+            }
+          }
+        }
+      }
       const claimable = await kit.creatorVaultBalances(ctx, { creator: w.publicKey });
       if (claimable.sol < CFG.min_claim_sol) return;
       if (CFG.dry) return log(`would claim ${claimable.sol} SOL`);

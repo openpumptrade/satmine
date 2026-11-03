@@ -86,7 +86,7 @@ Runs every `BTC_EVERY_MS` (10 min by default). Each cycle, in order:
 
 | Step | Rule |
 |---|---|
-| Claim | If the creator vault holds ≥ `BTC_MIN_CLAIM_SOL`, claim it (both pump.fun programs). |
+| Claim | If the creator vault holds ≥ `BTC_MIN_CLAIM_SOL`, claim it (both pump.fun programs). When `TOKEN_MINT` is set and the coin has a pump.fun **fee-sharing config** (fees redirected to the engine wallet at launch), the shared vault is distributed first, so the engine wallet does not need to be the coin's creator. |
 | Convert | SOL above `BTC_KEEP_SOL` (gas reserve) is swapped to USDT through Jupiter (1 % slippage cap) in the engine wallet. |
 | Deposit | Any USDT balance ≥ `BTC_MIN_DEPOSIT_USDT` is transferred to the NiceHash USDT deposit address (Solana network), fetched once from the API and shown on the site. |
 | Order | NiceHash's SHA-256 market needs 300 USDT to open an order (`NH_ORDER_MIN_USDT`); until the marketplace balance reaches that, the engine logs `waiting: x / 300 USDT`. The first order is placed at `NH_PRICE_MARGIN ×` the market price (3 % above, so rigs pick it up at once) with speed cap `NH_LIMIT_EH`, against a saved pool (`POOL_HOST:POOL_PORT`, username `BTC_ADDRESS.worker`). Every later cycle **refills the same order** with whatever balance is ≥ `NH_REFILL_MIN_USDT`. If the order dies (cancelled, expired), the next cycle opens a new one. |
