@@ -30,7 +30,17 @@ export async function jupiterSwap(ctx, { wallet, inputMint, outputMint, amountRa
   }
   const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
   const sig = await connection.sendTransaction(tx, { skipPreflight: true, maxRetries: 5 });
-  const conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, "confirmed");
+  let conf;
+  try { conf = await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, "confirmed"); }
+  catch (e) {
+    // a slow RPC can report "expired" for a tx that did land: check the signature before giving up
+    for (let i = 0; i < 10; i++) {
+      const st = (await connection.getSignatureStatuses([sig], { searchTransactionHistory: true })).value[0];
+      if (st?.confirmationStatus) { conf = { value: { err: st.err } }; break; }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    if (!conf) throw e;
+  }
   if (conf.value.err) throw new Error(`tx ${sig} failed on chain: ${JSON.stringify(conf.value.err)}`);
   return { sig, outAmount: BigInt(q.outAmount || 0), priceImpactPct: Number(q.priceImpactPct || 0) };
 }

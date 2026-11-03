@@ -32,7 +32,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@pump-fun/pump-sdk": "^2.0.0",
+    "@pump-fun/pump-sdk": "^4.3.1",
     "@pump-fun/pump-swap-sdk": "^1.20.0",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.0",
