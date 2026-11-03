@@ -54,6 +54,7 @@ export const CFG = {
   limit: Number(env('NH_LIMIT_EH', 0.001)), price_margin: Number(env('NH_PRICE_MARGIN', 1.03)),
   order_min_usdt: Number(env('NH_ORDER_MIN_USDT', 300)), refill_min_usdt: Number(env('NH_REFILL_MIN_USDT', 20)),
   min_deposit_usdt: Number(env('BTC_MIN_DEPOSIT_USDT', 10)),
+  deposit_every_ms: Number(env('BTC_DEPOSIT_EVERY_MIN', 360)) * 60_000,   // batch deposits: NiceHash's Travel Rule flags many small deposits from a fresh account
   // Pool + payout
   btc_address: env('BTC_ADDRESS', ''),
   pool_host: env('POOL_HOST', 'mine.ocean.xyz'),
@@ -339,9 +340,10 @@ export class BtcEngine {
       const raw = await kit.tokenBalanceRaw(ctx, { owner: w.publicKey, mint: USDT_MINT });
       const usdt = Number(raw) / 10 ** USDT_DEC;
       if (usdt < CFG.min_deposit_usdt) return;
+      if (this.state.lastDeposit && Date.now() - this.state.lastDeposit < CFG.deposit_every_ms) return;
       if (CFG.dry) return log(`would deposit ${usdt} USDT to ${this.state.nhDeposit}`);
       const r = await kit.transferTokens(ctx, { wallet: w, mint: USDT_MINT, to: this.state.nhDeposit, amountRaw: raw, decimals: USDT_DEC });
-      this.push('deposits', { sig: r.sig, usdt, to: this.state.nhDeposit }); log(`deposited ${usdt} USDT to NiceHash · ${r.sig}`);
+      this.state.lastDeposit = Date.now(); this.push('deposits', { sig: r.sig, usdt, to: this.state.nhDeposit }); log(`deposited ${usdt} USDT to NiceHash · ${r.sig}`);
     } catch (e) { this.fail('deposit', e); }
   }
   async orderNicehash() {
